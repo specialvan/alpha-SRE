@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alpha-sre"
+version = "0.1.0"
+description = "Standalone narrative SRE control plane"
+requires-python = ">=3.10"
+
+[tool.setuptools]
+packages = ["alpha_sre"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

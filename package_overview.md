@@ -7,6 +7,7 @@
 - Separate reliability concerns from content generation.
 - Provide a deterministic replay and validation layer.
 - Preserve versioned narrative state as the source of truth.
+- Model role state, causal chains, and knowledge visibility explicitly.
 - Enable incident analysis and rollback before integration into product code.
 
 ## Main layers

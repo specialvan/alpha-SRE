@@ -1,0 +1,597 @@
+这个仓库目前更像“叙事 SRE 治理与规格包”，还没有到“可执行 SRE 系统”
+我审查到的仓库内容几乎全部是 Markdown 规划/治理文档，没有看到可运行代码、schema、测试、事件回放器或一致性 gate 的实现。因此我会把当前成熟度判断为：
+
+L1.5 / L4：方向正确、边界清楚、关键概念已被点名，但三类关键能力仍主要停留在规划层，尚未形成可计算、可验证、可回放的机制。
+
+仓库的定位很明确：它声明自己是小说生成系统的独立可靠性控制面，负责 world-state replay、narrative observability、consistency validation、incident diagnosis 和 controlled rollout support。CODEX_DEVELOPMENT_GOVERNANCE.md 已把这些目标写成项目目的。 
+同时，仓库也明确要求优先使用显式 schema、replay specification 和 consistency gates，而不是只有 prose-only designs。 
+
+但从实现程度看，当前主要是治理框架 + 待办板 + 初版 replay/metric 规格，还不是能真正跑小说复盘的 SRE 层。implementation_task_board.md 里把版本化叙事状态 schema、command/event/snapshot 分离、replay orchestrator、consistency gate 都列为当前工作项，且状态仍是 “in progress”。 
+
+三类关键能力评估
+关键能力	当前程度	是否缺失	判断
+角色状态建模	有方向，无 schema	高风险缺失	只写了要有 characters/world/plot/memory/policy/chapter intent，但没有字段、约束、版本、写回语义
+剧情因果校验	有术语，无机制	高风险缺失	有 event chain、causal chain diff，但没有因果图、前置条件、效果、违规定位算法
+世界观可回放	初步规格最好	部分具备但不可执行	有 replay inputs/outputs/rules，但缺少 event store、snapshot schema、观察视角、知识可见性和测试
+1. 角色状态建模：已经意识到，但还没有结构化落地
+已有基础
+仓库已经明确把 “world-state schema” 放进 baseline 控制面，说明项目意识到叙事 SRE 不能只看日志/指标，而必须有状态源。 
+
+任务板也写得更具体：T1 的目标是定义版本化叙事状态 schema，并包含 characters、world、plot、memory、policy、chapter intent。 
+
+指标文档也要求所有指标必须从 versioned state artifacts 计算，而不是只从正文 prose 计算。 
+
+主要缺口
+当前仓库还没有看到真正的结构化状态模型，例如：
+
+CharacterState
+
+目标 / 欲望 / 当前计划
+
+关系图
+
+记忆集合
+
+信念集合
+
+禁忌 / 底线 / 不能做的事
+
+情绪状态
+
+能力边界
+
+已知信息与未知信息
+
+WorldRule
+
+规则内容
+
+适用范围
+
+生效时间
+
+例外条件
+
+谁有权限修改
+
+修改是否需要事件支撑
+
+PlotState
+
+伏笔
+
+承诺
+
+未解决冲突
+
+已兑现事件
+
+被阻断的剧情路径
+
+MemoryState
+
+记忆来源
+
+记忆时间
+
+是否可靠
+
+哪些角色知道
+
+是否可被遗忘、篡改、误解
+
+PolicyState
+
+禁忌规则
+
+叙事约束
+
+风格约束
+
+世界观不可越权规则
+
+也就是说，现在文档已经知道“状态很重要”，但还没有把“状态”变成可计算对象。这正对应你提到的第一类不足：传统 SRE 会看指标、日志、链路，但小说复盘必须看角色目标、关系、记忆、禁忌、世界规则这些结构化状态。
+
+判断
+角色状态建模目前是规划中能力，不是已具备能力。
+
+2. 剧情因果校验：有 replay/causal 词汇，但缺少因果机制
+已有基础
+replay_spec.md 已经把 event chain 列为 replay input，把 causal chain diff 列为 replay output。 
+
+任务板 T2 也明确要求 command / event / snapshot 分离，目标是让 replay 能重建 causal history。 
+
+T5 还提到 incident analysis 需要 mechanism-missing diagnosis 和 replay-based validation。 
+
+这些设计方向是对的，因为小说一致性问题不是简单的“异常检测”，而是要能回答：
+
+哪个前置事件没有生效？
+
+哪个状态没有写回？
+
+哪条世界规则被覆盖？
+
+哪个角色知道了不该知道的信息？
+
+哪个伏笔没有进入 payoff 生命周期？
+
+哪个事件的后果没有传播到后续章节？
+
+主要缺口
+目前文档还没有定义：
+
+2.1 因果边的结构
+缺少类似这样的 schema：
+
+CausalEdge:
+  from_event_id: string
+  to_event_id: string
+  relation_type:
+    - enables
+    - blocks
+    - reveals
+    - causes_state_change
+    - requires_precondition
+    - pays_off
+    - contradicts
+  expected_effects:
+    - state_path: character.A.beliefs.knows_secret
+      value: true
+  evidence_span:
+    chapter: 12
+    paragraph: 4
+2.2 前置条件 / 后置效果
+目前只有 “causal chain diff” 这个输出名，但没有定义如何判断：
+
+事件是否满足前置条件
+
+事件是否产生应有后果
+
+后果是否写回 snapshot
+
+后果是否在后续章节可见
+
+后续章节是否错误忽略该后果
+
+2.3 因果违规类型
+指标文档中有 causality break rate，但没有定义这个 rate 的计算粒度和违规枚举。 
+
+建议至少分成：
+
+missing_precondition：事件缺少前置条件
+
+missing_effect_writeback：事件发生了，但效果没写回状态
+
+stale_state_read：后续章节读到了旧状态
+
+unauthorized_world_rule_mutation：设定被越权改写
+
+impossible_knowledge_transfer：角色知道了视角外信息
+
+broken_payoff_chain：伏笔没有进入兑现链
+
+contradicted_memory：角色记忆与既有事件冲突
+
+causal_loop_or_unexplained_jump：剧情跳跃无桥接事件
+
+判断
+剧情因果校验目前是“概念已出现，但机制缺失”。
+
+它比普通异常检测走得更远，因为文档已经要求 causal chain diff 和 mechanism-missing diagnosis。 
+但它还没有到“能定位哪个前置事件没生效、哪个状态没写回、哪个设定被越权改写”的程度。
+
+3. 世界观可回放：这是当前最接近成型的能力，但仍不可执行
+已有基础
+package_overview.md 把 deterministic replay and validation layer、versioned narrative state source of truth、replayable state snapshots 列为核心设计意图和主要输出。 
+
+replay_spec.md 已有 replay inputs：
+
+command sequence
+
+event chain
+
+versioned snapshots
+
+policy state
+
+chapter intent
+
+这些输入是正确方向。 
+
+它也已有 replay outputs：
+
+output diff
+
+state diff
+
+constraint diff
+
+causal chain diff
+
+failure classification
+
+这说明 replay 不是只比较最终文本，而是计划比较状态、约束和因果链。 
+
+Replay rules 里还明确要求：
+
+lock versions before replay
+
+isolate side effects
+
+compare state before comparing prose
+
+classify failure by mechanism, not by style alone
+
+这非常符合小说复盘 SRE 的核心需求。 
+
+主要缺口
+但现在的 replay spec 还缺少最关键的一层：
+
+回到某个时间点时，系统当时“看到了什么、相信什么、能做什么”。
+
+当前 replay inputs 里有 command sequence、event chain、versioned snapshots、policy state、chapter intent。 
+但没有显式的：
+
+observation frame
+
+actor/POV
+
+visible knowledge set
+
+believed knowledge set
+
+accessible memory set
+
+allowed action set
+
+hidden facts
+
+unreliable facts
+
+generated text provenance
+
+model/context prompt version
+
+retrieval result version
+
+write-back decision trace
+
+这会导致 replay 只能回答：
+
+“同样输入下最终输出是否不同？”
+
+但很难回答：
+
+“第 18 章生成时，角色 A 当时到底知不知道 B 的秘密？”
+“系统当时是不是错误检索到了未来章节信息？”
+“这个世界规则在当时是否已经生效？”
+“这个角色当时是否有能力采取这个行动？”
+“这次生成使用的是旧 snapshot 还是新 snapshot？”
+
+判断
+世界观可回放目前是三项中基础最好的一项，但仍然只是规格草案，不是可运行能力。
+
+4. 你列出的五个“可能不足”逐条核对
+4.1 “没有把状态结构化” —— 基本成立
+仓库已经提出 versioned narrative state schema，且要覆盖 characters、world、plot、memory、policy、chapter intent。 
+但没有实际 schema 文件、字段定义、状态转移规则、状态版本协议或写回语义。
+
+结论：方向正确，落地不足。
+
+4.2 “缺少因果而不是只有异常” —— 基本成立
+文档中已经出现 event chain、causal chain diff、mechanism-missing diagnosis。 
+但还没有因果边、前置条件、后置效果、冲突定位、write-back 校验、世界规则越权检测等机制。
+
+结论：不是完全没有因果意识，但还没有因果校验系统。
+
+4.3 “没有 replay 语义” —— 部分不成立，但 replay 语义还不够完整
+这个仓库确实有 replay 语义。replay_spec.md 明确规定 deterministic replay、locked versions、state diff、constraint diff、causal chain diff，并要求先比较 state 再比较 prose。 
+
+但它缺少“当时系统可见性/信念/行动边界”的 replay frame。
+因此它有 replay 的骨架，但还不是小说复盘真正需要的“时间点语义 replay”。
+
+结论：不是没有 replay，而是 replay 还停留在结构级，缺少认知/可见性 replay。
+
+4.4 “评测粒度太粗” —— 成立
+当前 metric catalog 的叙事质量指标是：
+
+character OOC rate
+
+world rule violation rate
+
+plot inconsistency rate
+
+foreshadowing payoff rate
+
+causality break rate
+
+memory omission rate
+
+这些指标名称方向正确，但粒度都是 rate 级别。 
+
+它们没有定义检测单位，例如：
+
+角色行动
+
+角色台词
+
+信息披露
+
+事件
+
+状态转移
+
+规则引用
+
+规则修改
+
+伏笔创建
+
+伏笔兑现
+
+记忆读取
+
+记忆写入
+
+视角切换
+
+retrieval hit
+
+prompt context item
+
+如果只用章节级或 rate 级打分，确实会漏掉你说的人物前后矛盾、伏笔失效、世界规则漂移这类问题。
+
+结论：指标目录有了，但还没有“原子事件级评测”。
+
+4.5 “缺少知识可见性约束” —— 成立，而且这是当前最大盲点之一
+我检索了仓库中的 relevant terms，当前文档没有形成明确的 knowledge visibility / POV / visible facts / hidden facts 约束体系。
+现有状态模型只笼统提到 memory，replay input 只笼统提到 policy state 和 chapter intent。 
+
+这会导致一种典型误判：
+
+角色知道了自己视角之外的信息，系统可能把它当成文风问题、OOC 问题或普通 plot inconsistency，而不是定位为 knowledge visibility violation。
+
+结论：知识可见性目前基本缺失，应该升为 baseline 能力，而不是后续增量。
+
+5. 我建议把能力拆成 5 个 baseline contract
+如果这个仓库要从“治理规格包”升级为真正的小说 SRE 控制面，我建议下一步不要先做泛泛的 metrics，而是先补五个 contract。
+
+P0-1：versioned_narrative_state_schema
+目标：把状态从 prose 变成可计算对象。
+
+最低字段建议：
+
+NarrativeState:
+  state_id: string
+  version: string
+  story_id: string
+  chapter_id: string
+  tick: integer
+  characters: map[CharacterId, CharacterState]
+  world_rules: map[RuleId, WorldRule]
+  plot_threads: map[ThreadId, PlotThread]
+  memories: map[MemoryId, MemoryFact]
+  visibility: VisibilityGraph
+  policy: PolicyState
+  provenance:
+    derived_from_snapshot: string
+    derived_from_events: list[EventId]
+必须包含：
+
+character goals
+
+relationships
+
+beliefs
+
+memories
+
+constraints/taboos
+
+abilities
+
+current location
+
+world rule authority
+
+plot obligations
+
+foreshadowing lifecycle
+
+visibility graph
+
+P0-2：command_event_snapshot_contract
+目标：支持“哪条命令导致哪个事件，哪个事件写回哪个状态”。
+
+Command:
+  command_id: string
+  issued_at: string
+  actor: system | operator | generator | editor
+  intent: string
+  input_snapshot_id: string
+
+Event:
+  event_id: string
+  command_id: string
+  event_type: string
+  preconditions: list[StatePredicate]
+  effects: list[StatePatch]
+  visible_to: list[CharacterId]
+  hidden_from: list[CharacterId]
+  source_span: TextSpan
+  causal_parents: list[EventId]
+
+Snapshot:
+  snapshot_id: string
+  parent_snapshot_id: string
+  applied_events: list[EventId]
+  state_hash: string
+这正好对应现有 T2 的 command / event / snapshot separation。 
+
+P0-3：causal_validation_gate
+目标：把“这章不对”变成“哪个前置/状态/规则错了”。
+
+至少要有这些 gate：
+
+precondition gate
+
+effect write-back gate
+
+stale snapshot gate
+
+world rule authority gate
+
+causal parent gate
+
+foreshadowing lifecycle gate
+
+contradiction gate
+
+impossible action gate
+
+输出应包含：
+
+CausalViolation:
+  violation_id: string
+  severity: hard | soft
+  failed_event_id: string
+  missing_precondition: StatePredicate
+  expected_source_event_id: string
+  actual_snapshot_id: string
+  diagnosis:
+    - missing_event
+    - missing_writeback
+    - stale_read
+    - unauthorized_override
+P0-4：replay_observation_frame
+目标：补上你说的核心语义——回到“当时系统看到了什么、相信什么、能做什么”。
+
+ReplayFrame:
+  replay_id: string
+  at_tick: integer
+  pov_actor: CharacterId | narrator | system
+  input_snapshot_id: string
+  visible_facts: list[FactId]
+  hidden_facts: list[FactId]
+  believed_facts: list[FactId]
+  accessible_memories: list[MemoryId]
+  allowed_actions: list[ActionType]
+  blocked_actions: list[ActionType]
+  active_world_rules: list[RuleId]
+  active_plot_obligations: list[ThreadId]
+  retrieval_context_hash: string
+  prompt_context_hash: string
+这应该并入 replay_spec.md，因为当前 replay spec 只有 command/event/snapshot/policy/chapter intent，还没有 observation frame。 
+
+P0-5：knowledge_visibility_gate
+目标：防止角色知道 POV 之外的信息。
+
+建议定义：
+
+VisibilityRule:
+  fact_id: string
+  visible_to: list[CharacterId]
+  hidden_from: list[CharacterId]
+  visibility_source:
+    - witnessed
+    - told_by
+    - inferred
+    - public_knowledge
+    - supernatural
+    - narrator_only
+  valid_from_event_id: string
+  confidence: certain | suspected | false_belief
+违规类型：
+
+knows_hidden_fact
+
+speaks_hidden_fact
+
+acts_on_hidden_fact
+
+infers_without_evidence
+
+narrator_leak_into_character_pov
+
+future_knowledge_leak
+
+private_memory_leak
+
+这项不应该放 experimental，应该进 baseline，因为它影响角色一致性、因果一致性和世界观 replay。
+
+6. 当前仓库的结构问题
+6.1 文档索引引用了不存在的文件
+package_manifest.md 把 incident_postmortem_template.md、experimental/README.md、archive/README.md 列入包结构。 
+final_document_index.md 也引用了 incident_postmortem_template.md 和 archive/README.md。 
+
+但我用 find . -maxdepth 3 -type f | sort 查看当前文件列表时，没有看到这些文件。
+这会削弱治理包的一致性，因为索引声称存在的 incident/postmortem 和 archive/experimental 入口实际缺失。
+
+6.2 测试治理存在，但没有测试资产
+test_governance.md 要求 unit、integration、regression、acceptance tests，并要求 replay 和 consistency logic 有 deterministic tests。 
+但当前仓库没有测试目录、测试样例、fixture、schema 校验、golden replay case 或 CI 配置。
+
+这说明测试治理是正确的，但还没有进入可验证阶段。
+
+6.3 Integration plan 是合理的，但接口未定义
+integration_plan_alpha_autopilot.md 提出了 narrative state read API、write-back API、replay request API、metrics export API、incident export API。 
+它也指出 duplicated state ownership、versioning mismatch、replay drift、gate bypass 等风险。 
+
+这些风险识别是准确的，但还缺 API contract、版本策略、失败语义、幂等写回和回滚协议。
+
+7. 建议优先级路线图
+立即补 P0
+新增 narrative_state_schema.md
+
+明确定义 CharacterState、WorldRule、PlotThread、MemoryFact、VisibilityGraph、PolicyState。
+
+扩展 replay_spec.md
+
+增加 ReplayFrame、ObservationFrame、POV、visible/believed/hidden facts。
+
+新增 causal_validation_spec.md
+
+定义 precondition/effect/causal edge/write-back/stale-read/unauthorized override。
+
+新增 knowledge_visibility_spec.md
+
+定义可见性图、信息来源、角色知识边界和违规类型。
+
+新增 evaluation_granularity_spec.md
+
+把指标从章节级 rate 拆成 event/action/dialogue/fact/state-transition/rule-mutation 级别。
+
+然后补 P1
+replay fixture 示例
+
+incident postmortem template
+
+golden case：角色知道不该知道的信息
+
+golden case：事件发生但状态没写回
+
+golden case：世界规则被越权改写
+
+golden case：伏笔创建但没有 payoff
+
+schema validation 脚本或 JSON Schema
+
+8. 总体判断
+这个仓库的价值在于：已经把小说生成的可靠性问题从“文风质量”提升到了“状态、回放、约束、因果、治理”的层面。
+这比传统只看日志、指标、异常的 SRE 更接近叙事系统真正需要的方向。
+
+但当前短板也很明显：
+
+角色状态建模：缺 schema。
+
+剧情因果校验：缺因果图和状态转移验证。
+
+世界观可回放：有 replay spec，但缺 observation frame 和知识可见性。
+
+评测粒度：指标是 rate 级，还没有 atomic violation。
+
+知识可见性：几乎未建模，是最需要尽快补的 baseline 能力。
+
+我的最终建议是：
+
+不要先扩展更多治理文档。下一步应该把 versioned narrative state、causal validation、replay observation frame、knowledge visibility 四个规格写成可执行 contract。否则这个仓库会停留在“知道 SRE 应该做什么”，但还不能真正判断“小说哪里坏了、为什么坏、当时系统怎么坏的”。

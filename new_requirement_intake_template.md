@@ -2,6 +2,8 @@
 
 ## Requirement name
 
+## Decision owner
+
 ## Problem statement
 
 ## Intended outcome
@@ -13,9 +15,17 @@
 - experimental
 - archive
 
+## Priority
+
+## Non-goals
+
 ## Impact analysis
 
+## Impacted metrics
+
 ## Design boundaries
+
+## Compatibility impact
 
 ## Rollback expectation
 

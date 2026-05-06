@@ -1,32 +1,35 @@
 # Start Here
 
-This package is the standalone SRE system for novel generation.
+This package is the standalone SRE system for narrative generation.
 
-## Quick path
+## Official quick path
 
-1. Read `CODEX_DEVELOPMENT_GOVERNANCE.md`
-2. Read `SHORT_NAV.md`
-3. Read `codex_run_card.md`
-4. Read `task_launch_template.md`
-5. Read `new_requirement_intake_template.md`
-6. Read `new_requirement_execution_flow.md`
-7. Read `test_governance.md`
-8. Read `execution_governance.md`
+Follow this exact order on first entry:
+
+1. `CODEX_DEVELOPMENT_GOVERNANCE.md`
+2. `SHORT_NAV.md`
+3. `package_manifest.md`
+4. `package_overview.md`
+5. `implementation_task_board.md`
+6. `task_launch_template.md`
+7. `new_requirement_intake_template.md`
+8. `new_requirement_execution_flow.md`
+9. `test_governance.md`
+10. `execution_governance.md`
 
 ## What this package controls
 
-- world-state replay
+- versioned narrative state and replay
 - narrative observability
-- consistency validation
-- incident analysis
-- controlled rollout support
+- consistency validation and gating
+- incident analysis and rollback evidence
 - future integration into `alpha-autopilot`
 
 ## What this package is not
 
 - It is not the story generator itself.
 - It is not the primary writing application.
-- It is not a loose documentation dump.
+- It is not a loose document dump.
 
 ## First decision for any task
 
@@ -36,3 +39,10 @@ Classify the task as one of:
 - increment
 - experimental
 - archive
+
+Then identify the required evidence:
+
+- specification update
+- test layer
+- rollback trigger
+- index or manifest impact
