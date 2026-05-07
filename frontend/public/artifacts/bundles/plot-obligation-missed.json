@@ -1,0 +1,96 @@
+{
+  "bundle_version": "1.0",
+  "command": {
+    "command_id": "cmd-plot-1",
+    "command_type": "edit",
+    "operator_id": "replay-op-6",
+    "target_id": "chapter-12",
+    "policy_version": "p1",
+    "created_at": "2026-05-07T14:20:00Z"
+  },
+  "snapshot": {
+    "snapshot_id": "s-plot-pre",
+    "state_identity": "state-plot",
+    "schema_version": "1.0",
+    "policy_version": "p1",
+    "visibility_version": "v2",
+    "created_at": "2026-05-07T14:19:00Z",
+    "plot_threads": {
+      "oath_return": {
+        "setup": "chapter 2 oath",
+        "payoff_due": "chapter 8"
+      }
+    }
+  },
+  "events": [
+    {
+      "event_id": "e-plot-1",
+      "command_id": "cmd-plot-1",
+      "event_type": "skip_obligation",
+      "causal_order_index": 1,
+      "created_at": "2026-05-07T14:20:00Z",
+      "policy_version": "p1",
+      "payload": {
+        "thread_id": "oath_return",
+        "missed_payoff": "chapter 8"
+      }
+    }
+  ],
+  "replay": {
+    "ok": false,
+    "failure_classification": "plot_obligation_missed",
+    "evidence_references": [
+      "command:cmd-plot-1",
+      "snapshot:s-plot-pre",
+      "event:e-plot-1"
+    ],
+    "issues": [
+      {
+        "code": "plot_obligation_missed",
+        "message": "plot_obligation_missed detected during locked replay verification",
+        "subject_id": "cmd-plot-1",
+        "field": "plot_threads.oath_return.payoff"
+      }
+    ],
+    "post_state_diff": [
+      "plot_threads.oath_return.payoff"
+    ]
+  },
+  "metrics": {
+    "trace_completeness": 1,
+    "replay_availability": 0,
+    "checked_plot_obligation_count": 3,
+    "plot_obligation_miss_rate": 1
+  },
+  "gate": {
+    "allowed": false,
+    "blocking_issues": [
+      "plot_obligation_missed"
+    ],
+    "warnings": []
+  },
+  "drift_report": {
+    "drifted": false,
+    "reasons": [
+      "plot_obligation_missed"
+    ],
+    "source_signature": {},
+    "replay_signature": {}
+  },
+  "session": {
+    "policy_version": "p1",
+    "prompt_version": "chapter-intent-v2",
+    "replay_operator_id": "replay-op-6",
+    "visibility_snapshot_version": "v2",
+    "narrative_state_schema_version": "1.0",
+    "evidence_references": [
+      "bundle:plot-obligation-missed"
+    ],
+    "observation_frame": {
+      "replay_id": "replay-plot-obligation-missed",
+      "at_causal_order_index": 1,
+      "pov_actor_id": "c6",
+      "input_snapshot_id": "s-plot-pre"
+    }
+  }
+}

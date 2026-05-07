@@ -1,0 +1,96 @@
+{
+  "bundle_version": "1.0",
+  "command": {
+    "command_id": "cmd-rule-1",
+    "command_type": "edit",
+    "operator_id": "replay-op-5",
+    "target_id": "chapter-10",
+    "policy_version": "p1",
+    "created_at": "2026-05-07T14:40:00Z"
+  },
+  "snapshot": {
+    "snapshot_id": "s-rule-pre",
+    "state_identity": "state-rule",
+    "schema_version": "1.0",
+    "policy_version": "p1",
+    "visibility_version": "v2",
+    "created_at": "2026-05-07T14:39:00Z",
+    "world_rules": {
+      "warding_oath": {
+        "active": false,
+        "authority": "chapter_pact"
+      }
+    }
+  },
+  "events": [
+    {
+      "event_id": "e-rule-1",
+      "command_id": "cmd-rule-1",
+      "event_type": "invoke_inactive_rule",
+      "causal_order_index": 1,
+      "created_at": "2026-05-07T14:40:00Z",
+      "policy_version": "p1",
+      "payload": {
+        "actor_id": "c5",
+        "rule_id": "warding_oath"
+      }
+    }
+  ],
+  "replay": {
+    "ok": false,
+    "failure_classification": "inactive_rule_use",
+    "evidence_references": [
+      "command:cmd-rule-1",
+      "snapshot:s-rule-pre",
+      "event:e-rule-1"
+    ],
+    "issues": [
+      {
+        "code": "inactive_rule_use",
+        "message": "inactive_rule_use detected during locked replay verification",
+        "subject_id": "cmd-rule-1",
+        "field": "world_rules.warding_oath.active"
+      }
+    ],
+    "post_state_diff": [
+      "world_rules.warding_oath.active"
+    ]
+  },
+  "metrics": {
+    "trace_completeness": 1,
+    "replay_availability": 0,
+    "checked_rule_activation_count": 2,
+    "inactive_rule_use_rate": 1
+  },
+  "gate": {
+    "allowed": false,
+    "blocking_issues": [
+      "inactive_rule_use"
+    ],
+    "warnings": []
+  },
+  "drift_report": {
+    "drifted": false,
+    "reasons": [
+      "inactive_rule_use"
+    ],
+    "source_signature": {},
+    "replay_signature": {}
+  },
+  "session": {
+    "policy_version": "p1",
+    "prompt_version": "chapter-intent-v2",
+    "replay_operator_id": "replay-op-5",
+    "visibility_snapshot_version": "v2",
+    "narrative_state_schema_version": "1.0",
+    "evidence_references": [
+      "bundle:inactive-rule-use"
+    ],
+    "observation_frame": {
+      "replay_id": "replay-inactive-rule-use",
+      "at_causal_order_index": 1,
+      "pov_actor_id": "c5",
+      "input_snapshot_id": "s-rule-pre"
+    }
+  }
+}

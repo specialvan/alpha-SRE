@@ -1,0 +1,14 @@
+{
+  "attempt_id": "rel-post-state",
+  "triggering_command_id": "cmd-v2",
+  "started_at": "2026-05-07T16:05:00Z",
+  "source_snapshot_id": "s-v2-pre",
+  "source_system": "alpha-autopilot",
+  "actor": "operator-1",
+  "write_back_ok": false,
+  "gate_allowed": false,
+  "drift_detected": false,
+  "manual_rollback_performed": true,
+  "rollback_reason": "operator reverted pending publish",
+  "incident_id": "inc-post-state"
+}

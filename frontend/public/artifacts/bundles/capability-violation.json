@@ -1,0 +1,101 @@
+{
+  "bundle_version": "1.0",
+  "command": {
+    "command_id": "cmd-cap-1",
+    "command_type": "edit",
+    "operator_id": "replay-op-4",
+    "target_id": "scene-9",
+    "policy_version": "p1",
+    "created_at": "2026-05-07T15:00:00Z"
+  },
+  "snapshot": {
+    "snapshot_id": "s-cap-pre",
+    "state_identity": "state-cap",
+    "schema_version": "1.0",
+    "policy_version": "p1",
+    "visibility_version": "v2",
+    "created_at": "2026-05-07T14:59:00Z",
+    "capabilities": {
+      "c4": [
+        "negotiate",
+        "observe"
+      ]
+    },
+    "constraints": {
+      "c4": {
+        "cannot": "override_locked_door"
+      }
+    }
+  },
+  "events": [
+    {
+      "event_id": "e-cap-1",
+      "command_id": "cmd-cap-1",
+      "event_type": "perform_forbidden_action",
+      "causal_order_index": 1,
+      "created_at": "2026-05-07T15:00:00Z",
+      "policy_version": "p1",
+      "payload": {
+        "actor_id": "c4",
+        "action": "override_locked_door"
+      }
+    }
+  ],
+  "replay": {
+    "ok": false,
+    "failure_classification": "capability_violation",
+    "evidence_references": [
+      "command:cmd-cap-1",
+      "snapshot:s-cap-pre",
+      "event:e-cap-1"
+    ],
+    "issues": [
+      {
+        "code": "capability_violation",
+        "message": "capability_violation detected during locked replay verification",
+        "subject_id": "cmd-cap-1",
+        "field": "capabilities.c4.override_locked_door"
+      }
+    ],
+    "post_state_diff": [
+      "capabilities.c4.override_locked_door"
+    ]
+  },
+  "metrics": {
+    "trace_completeness": 1,
+    "replay_availability": 0,
+    "checked_actor_action_count": 2,
+    "capability_violation_rate": 1
+  },
+  "gate": {
+    "allowed": false,
+    "blocking_issues": [
+      "capability_violation"
+    ],
+    "warnings": []
+  },
+  "drift_report": {
+    "drifted": false,
+    "reasons": [
+      "capability_violation"
+    ],
+    "source_signature": {},
+    "replay_signature": {}
+  },
+  "session": {
+    "policy_version": "p1",
+    "prompt_version": "chapter-intent-v2",
+    "replay_operator_id": "replay-op-4",
+    "visibility_snapshot_version": "v2",
+    "narrative_state_schema_version": "1.0",
+    "evidence_references": [
+      "bundle:capability-violation"
+    ],
+    "observation_frame": {
+      "replay_id": "replay-capability-violation",
+      "at_causal_order_index": 1,
+      "pov_actor_id": "c4",
+      "input_snapshot_id": "s-cap-pre"
+    }
+  }
+}

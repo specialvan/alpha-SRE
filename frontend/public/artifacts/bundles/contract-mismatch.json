@@ -1,0 +1,92 @@
+{
+  "bundle_version": "1.0",
+  "command": {
+    "command_id": "cmd-contract-1",
+    "command_type": "edit",
+    "operator_id": "replay-op-9",
+    "target_id": "chapter-16",
+    "policy_version": "p1",
+    "created_at": "2026-05-07T13:20:00Z"
+  },
+  "snapshot": {
+    "snapshot_id": "s-contract-pre",
+    "state_identity": "state-contract",
+    "schema_version": "1.0",
+    "policy_version": "p1",
+    "visibility_version": "v2",
+    "created_at": "2026-05-07T13:19:00Z",
+    "constraints": {
+      "integration_contract": "replay_bundle.v2.2"
+    }
+  },
+  "events": [
+    {
+      "event_id": "e-contract-1",
+      "command_id": "cmd-contract-1",
+      "event_type": "emit_contract_violation",
+      "causal_order_index": 1,
+      "created_at": "2026-05-07T13:20:00Z",
+      "policy_version": "p1",
+      "payload": {
+        "contract": "replay_bundle.v2.2",
+        "missing_field": "evidence_references"
+      }
+    }
+  ],
+  "replay": {
+    "ok": false,
+    "failure_classification": "contract_mismatch",
+    "evidence_references": [
+      "command:cmd-contract-1",
+      "snapshot:s-contract-pre",
+      "event:e-contract-1"
+    ],
+    "issues": [
+      {
+        "code": "contract_mismatch",
+        "message": "contract_mismatch detected during locked replay verification",
+        "subject_id": "cmd-contract-1",
+        "field": "integration.contract.replay_bundle.v2_2"
+      }
+    ],
+    "post_state_diff": [
+      "integration.contract.replay_bundle.v2_2"
+    ]
+  },
+  "metrics": {
+    "trace_completeness": 1,
+    "replay_availability": 0,
+    "contract_mismatch_rate": 1
+  },
+  "gate": {
+    "allowed": false,
+    "blocking_issues": [
+      "contract_mismatch"
+    ],
+    "warnings": []
+  },
+  "drift_report": {
+    "drifted": false,
+    "reasons": [
+      "contract_mismatch"
+    ],
+    "source_signature": {},
+    "replay_signature": {}
+  },
+  "session": {
+    "policy_version": "p1",
+    "prompt_version": "chapter-intent-v2",
+    "replay_operator_id": "replay-op-9",
+    "visibility_snapshot_version": "v2",
+    "narrative_state_schema_version": "1.0",
+    "evidence_references": [
+      "bundle:contract-mismatch"
+    ],
+    "observation_frame": {
+      "replay_id": "replay-contract-mismatch",
+      "at_causal_order_index": 1,
+      "pov_actor_id": "c9",
+      "input_snapshot_id": "s-contract-pre"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "review_id": "review-post-state",
+  "source_artifact_reference": "bundle:post-state-mismatch",
+  "checked_segment_count": 4,
+  "ooc_incident_count": 1,
+  "checked_scene_count": 2,
+  "world_rule_violation_count": 0,
+  "introduced_setup_item_count": 2,
+  "resolved_setup_item_count": 1,
+  "evidence_references": ["event:e1"]
+}

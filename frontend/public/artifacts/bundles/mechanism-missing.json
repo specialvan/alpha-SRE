@@ -1,0 +1,95 @@
+{
+  "bundle_version": "1.0",
+  "command": {
+    "command_id": "cmd-mechanism-1",
+    "command_type": "edit",
+    "operator_id": "replay-op-10",
+    "target_id": "chapter-17",
+    "policy_version": "p1",
+    "created_at": "2026-05-07T13:00:00Z"
+  },
+  "snapshot": {
+    "snapshot_id": "s-mechanism-pre",
+    "state_identity": "state-mechanism",
+    "schema_version": "1.0",
+    "policy_version": "p1",
+    "visibility_version": "v2",
+    "created_at": "2026-05-07T12:59:00Z",
+    "chapter_intents": {
+      "chapter_17": "deliver payoff"
+    },
+    "mechanisms": {
+      "foreshadowing_tracker": false
+    }
+  },
+  "events": [
+    {
+      "event_id": "e-mechanism-1",
+      "command_id": "cmd-mechanism-1",
+      "event_type": "missing_mechanism",
+      "causal_order_index": 1,
+      "created_at": "2026-05-07T13:00:00Z",
+      "policy_version": "p1",
+      "payload": {
+        "mechanism": "foreshadowing_tracker",
+        "effect": "payoff verification skipped"
+      }
+    }
+  ],
+  "replay": {
+    "ok": false,
+    "failure_classification": "mechanism_missing",
+    "evidence_references": [
+      "command:cmd-mechanism-1",
+      "snapshot:s-mechanism-pre",
+      "event:e-mechanism-1"
+    ],
+    "issues": [
+      {
+        "code": "mechanism_missing",
+        "message": "mechanism_missing detected during locked replay verification",
+        "subject_id": "cmd-mechanism-1",
+        "field": "mechanisms.foreshadowing_tracker"
+      }
+    ],
+    "post_state_diff": [
+      "mechanisms.foreshadowing_tracker"
+    ]
+  },
+  "metrics": {
+    "trace_completeness": 1,
+    "replay_availability": 0,
+    "mechanism_missing_rate": 1
+  },
+  "gate": {
+    "allowed": false,
+    "blocking_issues": [
+      "mechanism_missing"
+    ],
+    "warnings": []
+  },
+  "drift_report": {
+    "drifted": false,
+    "reasons": [
+      "mechanism_missing"
+    ],
+    "source_signature": {},
+    "replay_signature": {}
+  },
+  "session": {
+    "policy_version": "p1",
+    "prompt_version": "chapter-intent-v2",
+    "replay_operator_id": "replay-op-10",
+    "visibility_snapshot_version": "v2",
+    "narrative_state_schema_version": "1.0",
+    "evidence_references": [
+      "bundle:mechanism-missing"
+    ],
+    "observation_frame": {
+      "replay_id": "replay-mechanism-missing",
+      "at_causal_order_index": 1,
+      "pov_actor_id": "c10",
+      "input_snapshot_id": "s-mechanism-pre"
+    }
+  }
+}

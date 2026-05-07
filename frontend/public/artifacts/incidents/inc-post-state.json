@@ -1,0 +1,12 @@
+{
+  "incident_id": "inc-post-state",
+  "title": "Post-state mismatch incident",
+  "severity": "high",
+  "status": "open",
+  "date_opened": "2026-05-07",
+  "incident_owner": "oncall-1",
+  "locked_command_id": "cmd-v2",
+  "pre_state_snapshot_id": "s-v2-pre",
+  "required_regression_test": "replay_regression::locked_post_state_mismatch_visible",
+  "evidence_references": ["event:e1", "snapshot:s-v2-pre"]
+}

@@ -1,0 +1,92 @@
+{
+  "bundle_version": "1.0",
+  "command": {
+    "command_id": "cmd-policy-1",
+    "command_type": "edit",
+    "operator_id": "replay-op-7",
+    "target_id": "chapter-14",
+    "policy_version": "p1",
+    "created_at": "2026-05-07T14:00:00Z"
+  },
+  "snapshot": {
+    "snapshot_id": "s-policy-pre",
+    "state_identity": "state-policy",
+    "schema_version": "1.0",
+    "policy_version": "p1",
+    "visibility_version": "v2",
+    "created_at": "2026-05-07T13:59:00Z",
+    "chapter_intents": {
+      "chapter_14": "negotiate ceasefire"
+    }
+  },
+  "events": [
+    {
+      "event_id": "e-policy-1",
+      "command_id": "cmd-policy-1",
+      "event_type": "policy_override",
+      "causal_order_index": 1,
+      "created_at": "2026-05-07T14:00:00Z",
+      "policy_version": "p1",
+      "payload": {
+        "expected_policy": "p1",
+        "actual_policy": "p1-hotfix"
+      }
+    }
+  ],
+  "replay": {
+    "ok": false,
+    "failure_classification": "policy_drift",
+    "evidence_references": [
+      "command:cmd-policy-1",
+      "snapshot:s-policy-pre",
+      "event:e-policy-1"
+    ],
+    "issues": [
+      {
+        "code": "policy_drift",
+        "message": "policy_drift detected during locked replay verification",
+        "subject_id": "cmd-policy-1",
+        "field": "policy_version"
+      }
+    ],
+    "post_state_diff": [
+      "policy_version"
+    ]
+  },
+  "metrics": {
+    "trace_completeness": 1,
+    "replay_availability": 0,
+    "policy_drift_rate": 1
+  },
+  "gate": {
+    "allowed": false,
+    "blocking_issues": [
+      "policy_drift"
+    ],
+    "warnings": []
+  },
+  "drift_report": {
+    "drifted": true,
+    "reasons": [
+      "policy_drift"
+    ],
+    "source_signature": {},
+    "replay_signature": {}
+  },
+  "session": {
+    "policy_version": "p1",
+    "prompt_version": "chapter-intent-v2",
+    "replay_operator_id": "replay-op-7",
+    "visibility_snapshot_version": "v2",
+    "narrative_state_schema_version": "1.0",
+    "evidence_references": [
+      "bundle:policy-drift"
+    ],
+    "observation_frame": {
+      "replay_id": "replay-policy-drift",
+      "at_causal_order_index": 1,
+      "pov_actor_id": "c7",
+      "input_snapshot_id": "s-policy-pre"
+    }
+  }
+}
