@@ -21,21 +21,21 @@ export function PaginationControls({
         <strong>
           {start}-{end}
         </strong>{' '}
-        of <strong>{total}</strong> items
+        / 共 <strong>{total}</strong> 条
       </div>
       <div className="pagination__buttons">
         <button type="button" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
-          Previous
+          上一页
         </button>
         <span>
-          Page {page} / {totalPages}
+          第 {page} / {totalPages} 页
         </span>
         <button
           type="button"
           disabled={page >= totalPages}
           onClick={() => onPageChange(page + 1)}
         >
-          Next
+          下一页
         </button>
       </div>
     </footer>

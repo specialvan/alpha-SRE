@@ -7,21 +7,21 @@ describe('describeDataError', () => {
     expect(
       describeDataError(new HttpStatusError(401, 'Session expired.'), 'Artifacts unavailable.'),
     ).toEqual({
-      title: 'Authentication required.',
+      title: '需要身份认证。',
       description: 'Session expired.',
     })
 
     expect(
       describeDataError(new HttpStatusError(404, 'Artifact not found.'), 'Artifacts unavailable.'),
     ).toEqual({
-      title: 'Resource not found.',
+      title: '资源未找到。',
       description: 'Artifact not found.',
     })
 
     expect(
       describeDataError(new HttpStatusError(409, 'Version conflict.'), 'Artifacts unavailable.'),
     ).toEqual({
-      title: 'Version or state conflict.',
+      title: '版本或状态冲突。',
       description: 'Version conflict.',
     })
   })

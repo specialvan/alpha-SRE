@@ -25,12 +25,12 @@ export function CopyableText({
       <button
         type="button"
         className="copyable-text__button"
-        aria-label={`Copy ${label}`}
+        aria-label={`复制${label}`}
         onClick={() => {
           void copy()
         }}
       >
-        {copied ? 'Copied' : 'Copy'}
+        {copied ? '已复制' : '复制'}
       </button>
     </span>
   )

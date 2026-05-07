@@ -27,7 +27,7 @@ describe('CopyableText', () => {
 
     render(<CopyableText text="bundle:post-state-mismatch" label="Replay ref" />)
 
-    await user.click(screen.getByRole('button', { name: /copy replay ref/i }))
+    await user.click(screen.getByRole('button', { name: /复制replay ref/i }))
 
     expect(writeText).toHaveBeenCalledWith('bundle:post-state-mismatch')
     expect(screen.getByText('bundle:post-state-mismatch')).toBeInTheDocument()

@@ -1,9 +1,9 @@
 import type { ListCapabilities } from './types'
 
 const capabilityLabels: Record<keyof ListCapabilities, string> = {
-  timeRange: 'Time range',
-  status: 'Status filter',
-  replayOperatorId: 'Replay operator filter',
+  timeRange: '时间范围',
+  status: '状态筛选',
+  replayOperatorId: '回放操作员筛选',
 }
 
 export function enabledCapabilityLabels(capabilities?: ListCapabilities) {

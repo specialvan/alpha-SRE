@@ -6,6 +6,7 @@ import { ModeSwitcher } from './ModeSwitcher'
 import { SidebarNav } from './SidebarNav'
 import type { DataMode } from '../data/types'
 import type { OperatorRole, ThemeMode } from '../app/store'
+import { labelForDataMode, labelForRole } from '../ui/labels'
 
 interface AppShellProps {
   children: ReactNode
@@ -81,10 +82,10 @@ export function AppShell({
     <div className="app-shell">
       <aside className="shell-sidebar">
         <div className="sidebar-brand">
-          <p className="eyebrow">Narrative Reliability</p>
+          <p className="eyebrow">叙事可靠性</p>
           <h1>alpha-SRE</h1>
           <p className="muted">
-            Artifact-first console for replay, validation, and release evidence.
+            面向制品优先的控制台，用于查看回放、校验和发布证据链。
           </p>
         </div>
         <SidebarNav />
@@ -92,43 +93,43 @@ export function AppShell({
       <main className="shell-main">
         <header className="shell-header">
           <div>
-            <p className="eyebrow">Standalone narrative reliability console</p>
-            <h2>alpha-SRE Control Plane</h2>
+            <p className="eyebrow">独立叙事可靠性控制台</p>
+            <h2>alpha-SRE 控制台</h2>
           </div>
           <div className="shell-controls">
             <label className="control-group">
-              <span>Data mode</span>
+              <span>数据模式</span>
               <select
-                aria-label="Data mode"
+                aria-label="数据模式"
                 value={dataMode}
                 onChange={(event: ChangeEvent<HTMLSelectElement>) =>
                   onDataModeChange(event.target.value as DataMode)
                 }
               >
-                <option value="mock">mock</option>
-                <option value="artifact">artifact</option>
+                <option value="mock">{labelForDataMode('mock')}</option>
+                <option value="artifact">{labelForDataMode('artifact')}</option>
               </select>
             </label>
             <label className="control-group">
-              <span>Role</span>
+              <span>角色</span>
               <select
-                aria-label="Role"
+                aria-label="角色"
                 value={role}
                 onChange={(event: ChangeEvent<HTMLSelectElement>) =>
                   onRoleChange(event.target.value as OperatorRole)
                 }
               >
-                <option value="viewer">viewer</option>
-                <option value="operator">operator</option>
-                <option value="oncall">oncall</option>
-                <option value="admin">admin</option>
+                <option value="viewer">{labelForRole('viewer')}</option>
+                <option value="operator">{labelForRole('operator')}</option>
+                <option value="oncall">{labelForRole('oncall')}</option>
+                <option value="admin">{labelForRole('admin')}</option>
               </select>
             </label>
             <div className="search-form">
               <label className="control-group control-group--grow">
-                <span>Global search</span>
+                <span>全局搜索</span>
                 <input
-                  aria-label="Global search"
+                  aria-label="全局搜索"
                   placeholder="artifact:... / replay:... / snapshot:..."
                   value={searchQuery}
                   onChange={(event: ChangeEvent<HTMLInputElement>) =>
@@ -142,7 +143,7 @@ export function AppShell({
                 />
               </label>
               <button type="button" onClick={submitSearch}>
-                Go
+                跳转
               </button>
             </div>
             <ModeSwitcher theme={theme} onToggle={onToggleTheme} />

@@ -1,10 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 
-function segmentLabel(segment: string) {
-  return segment
-    .replace(/[-:]/g, ' ')
-    .replace(/\b\w/g, (char) => char.toUpperCase())
-}
+import { labelForRouteSegment } from '../ui/labels'
 
 export function Breadcrumbs() {
   const location = useLocation()
@@ -12,22 +8,22 @@ export function Breadcrumbs() {
 
   if (segments.length === 0) {
     return (
-      <p className="breadcrumbs breadcrumbs--root" aria-label="Breadcrumbs">
-        Overview
+      <p className="breadcrumbs breadcrumbs--root" aria-label="面包屑">
+        总览
       </p>
     )
   }
 
   return (
-    <nav className="breadcrumbs" aria-label="Breadcrumbs">
-      <Link to="/">Overview</Link>
+    <nav className="breadcrumbs" aria-label="面包屑">
+      <Link to="/">总览</Link>
       {segments.map((segment, index) => {
         const href = `/${segments.slice(0, index + 1).join('/')}`
 
         return (
           <span key={href}>
             {' / '}
-            <Link to={href}>{segmentLabel(segment)}</Link>
+            <Link to={href}>{labelForRouteSegment(segment)}</Link>
           </span>
         )
       })}

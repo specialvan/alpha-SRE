@@ -2,12 +2,13 @@ import { Link } from 'react-router-dom'
 
 import type { ArtifactDetail } from '../data/types'
 import { StateBadge } from './StateBadge'
+import { labelForArtifactKind } from '../ui/labels'
 
 export function ArtifactCard({ artifact }: { artifact: ArtifactDetail }) {
   return (
     <article className="surface-card artifact-card">
       <div className="card-topline">
-        <StateBadge label={artifact.kind} tone="neutral" />
+        <StateBadge label={labelForArtifactKind(artifact.kind)} tone="neutral" />
         {artifact.updatedAt ? <small className="muted">{artifact.updatedAt}</small> : null}
       </div>
       <h3 className="card-title">

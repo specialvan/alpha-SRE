@@ -5,11 +5,11 @@ import {
 import type { PropsWithChildren } from 'react'
 
 function Fallback({ error }: FallbackProps) {
-  const message = error instanceof Error ? error.message : 'Unknown page error'
+  const message = error instanceof Error ? error.message : '未知页面错误'
 
   return (
     <section className="surface-card empty-state">
-      <h2>Page Error</h2>
+      <h2>页面错误</h2>
       <p className="muted">{message}</p>
     </section>
   )

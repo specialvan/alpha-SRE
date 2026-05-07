@@ -10,7 +10,7 @@ export interface FilterOption {
 export function FilterBar({
   search,
   onSearchChange,
-  searchPlaceholder = 'Search by ref, id, or summary',
+  searchPlaceholder = '按 ref、id 或摘要搜索',
   sortBy,
   onSortByChange,
   sortOptions = [],
@@ -40,9 +40,9 @@ export function FilterBar({
     <section className="toolbar">
       <div className="toolbar__row">
         <label className="toolbar__field toolbar__field--grow">
-          <span>Search</span>
+          <span>搜索</span>
           <input
-            aria-label="Search"
+            aria-label="搜索"
             placeholder={searchPlaceholder}
             value={search}
             onChange={(event: ChangeEvent<HTMLInputElement>) =>
@@ -52,9 +52,9 @@ export function FilterBar({
         </label>
         {sortOptions.length > 0 && sortBy && onSortByChange ? (
           <label className="toolbar__field">
-            <span>Sort by</span>
+            <span>排序字段</span>
             <select
-              aria-label="Sort by"
+              aria-label="排序字段"
               value={sortBy}
               onChange={(event) => onSortByChange(event.target.value)}
             >
@@ -68,24 +68,24 @@ export function FilterBar({
         ) : null}
         {sortDirection && onSortDirectionChange ? (
           <label className="toolbar__field">
-            <span>Direction</span>
+            <span>排序方向</span>
             <select
-              aria-label="Sort direction"
+              aria-label="排序方向"
               value={sortDirection}
               onChange={(event) =>
                 onSortDirectionChange(event.target.value as SortDirection)
               }
             >
-              <option value="desc">Newest first</option>
-              <option value="asc">Oldest first</option>
+              <option value="desc">最新优先</option>
+              <option value="asc">最早优先</option>
             </select>
           </label>
         ) : null}
         {typeof pageSize === 'number' && onPageSizeChange ? (
           <label className="toolbar__field">
-            <span>Page size</span>
+            <span>每页数量</span>
             <select
-              aria-label="Page size"
+              aria-label="每页数量"
               value={String(pageSize)}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
             >
@@ -100,9 +100,9 @@ export function FilterBar({
       </div>
       {children ? <div className="toolbar__row">{children}</div> : null}
       <div className="toolbar__meta">
-        {typeof total === 'number' ? <strong>{total} results</strong> : <span />}{' '}
+        {typeof total === 'number' ? <strong>{total} 条结果</strong> : <span />}{' '}
         {capabilities.length > 0 ? (
-          <div className="pill-row" aria-label="List capabilities">
+          <div className="pill-row" aria-label="列表能力">
             {capabilities.map((capability) => (
               <span key={capability} className="pill">
                 {capability}

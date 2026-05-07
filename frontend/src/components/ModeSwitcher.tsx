@@ -1,3 +1,5 @@
+import { labelForTheme } from '../ui/labels'
+
 interface ModeSwitcherProps {
   theme: 'dark' | 'light'
   onToggle: () => void
@@ -5,9 +7,9 @@ interface ModeSwitcherProps {
 
 export function ModeSwitcher({ theme, onToggle }: ModeSwitcherProps) {
   return (
-    <button className="theme-toggle" type="button" aria-label="Theme switcher" onClick={onToggle}>
-      Theme
-      <span>{theme === 'dark' ? 'Dark' : 'Light'}</span>
+    <button className="theme-toggle" type="button" aria-label="主题切换" onClick={onToggle}>
+      主题
+      <span>{labelForTheme(theme)}</span>
     </button>
   )
 }

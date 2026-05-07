@@ -56,11 +56,11 @@ export function JsonTreeViewer({
       <div className="json-tree__header">
         <h3>{label}</h3>
         <button type="button" onClick={copy}>
-          Copy JSON
+          复制 JSON
         </button>
       </div>
       <ul className="json-tree__list">
-        <JsonNode name="root" value={value} />
+        <JsonNode name="根节点" value={value} />
       </ul>
     </section>
   )

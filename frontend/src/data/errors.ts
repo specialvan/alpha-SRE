@@ -1,10 +1,10 @@
 const statusTitles: Record<number, string> = {
-  401: 'Authentication required.',
-  403: 'Permission denied.',
-  404: 'Resource not found.',
-  409: 'Version or state conflict.',
-  422: 'Validation failed.',
-  500: 'Backend request failed.',
+  401: '需要身份认证。',
+  403: '没有访问权限。',
+  404: '资源未找到。',
+  409: '版本或状态冲突。',
+  422: '校验失败。',
+  500: '后端请求失败。',
 }
 
 export class HttpStatusError extends Error {

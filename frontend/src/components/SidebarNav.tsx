@@ -1,21 +1,21 @@
 import { NavLink } from 'react-router-dom'
 
 const navItems = [
-  { to: '/', label: 'Overview', end: true },
-  { to: '/artifacts', label: 'Artifacts' },
-  { to: '/snapshots', label: 'Snapshots' },
-  { to: '/replay', label: 'Replay Lab' },
-  { to: '/validation', label: 'Validation' },
-  { to: '/metrics', label: 'Metrics & Gate' },
-  { to: '/quality/reviews', label: 'Quality Reviews' },
-  { to: '/incidents', label: 'Incidents' },
-  { to: '/releases', label: 'Releases' },
+  { to: '/', label: '总览', end: true },
+  { to: '/artifacts', label: '制品' },
+  { to: '/snapshots', label: '快照' },
+  { to: '/replay', label: '回放实验室' },
+  { to: '/validation', label: '校验中心' },
+  { to: '/metrics', label: '指标与 Gate' },
+  { to: '/quality/reviews', label: '质量评审' },
+  { to: '/incidents', label: '事件' },
+  { to: '/releases', label: '发布' },
 ]
 
 export function SidebarNav() {
   return (
-    <nav className="sidebar-nav" aria-label="Primary">
-      <p className="eyebrow">Domains</p>
+    <nav className="sidebar-nav" aria-label="主导航">
+      <p className="eyebrow">领域</p>
       <ul className="nav-list">
         {navItems.map((item) => (
           <li key={item.to}>
