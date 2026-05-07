@@ -10,6 +10,7 @@ This specification governs:
 
 - POV-bound knowledge during replay
 - hidden versus visible fact handling
+- persisted fact-to-viewer visibility edges
 - accessible memory constraints
 - allowed and blocked action windows
 - visibility-linked failure classification
@@ -27,6 +28,34 @@ Required fields:
 - hidden actors
 - valid from event id
 - confidence mode
+
+### Visibility edge state
+
+The V2 narrative kernel persists visibility as graph edges in `NarrativeSnapshot.visibility_edges`.
+
+Required fields:
+
+- visibility edge id
+- fact id
+- viewer id
+- visibility status
+- visibility source
+- valid from event id
+- valid until event id
+
+Allowed visibility statuses:
+
+- visible
+- hidden
+- narrator_only
+- system_only
+
+Rules:
+
+- every visibility edge fact id must resolve to `NarrativeSnapshot.facts`
+- viewer ids must resolve to a character id, `narrator`, or `system`
+- observation frames are replay-local views and must be explainable from the persisted visibility graph
+- false belief state is represented in `NarrativeSnapshot.beliefs` and must stay distinct from hidden fact leakage
 
 Allowed visibility sources:
 

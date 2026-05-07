@@ -87,7 +87,8 @@ These gaps are the starting point for V2.
 ### Review and roadmap material
 
 - `codex-review/codex-cloud-review`: prior repo review
-- `codex-review/v2-pr-requirements-narrative-kernel.md`: current V2 PR requirement document
+- `codex-review/V2/V2.2-pr-requirements.md`: current V2.2 PR requirement document
+- `codex-review/v2-pr-requirements-narrative-kernel.md`: V2 background only
 
 ## How this differs from traditional SRE
 
@@ -135,61 +136,18 @@ Verification basis:
 - The current implementation is repo-native and purpose-built for `alpha-SRE`.
 - If future versions adopt or benchmark against external projects, those references should be added explicitly to this README and the relevant design docs.
 
-## V2: what still needs to be built
+## V2.2: current contract
 
-The V2 target is documented in [`codex-review/v2-pr-requirements-narrative-kernel.md`](codex-review/v2-pr-requirements-narrative-kernel.md).
+The current hardening contract is documented in [`codex-review/V2/V2.2-pr-requirements.md`](codex-review/V2/V2.2-pr-requirements.md).
+The older [`codex-review/v2-pr-requirements-narrative-kernel.md`](codex-review/v2-pr-requirements-narrative-kernel.md) file remains background material only.
 
-In plain terms, V2 still needs to do the following:
+In plain terms, the current contract is about stabilizing:
 
-### 1. Land a real narrative state kernel
-
-Add first-class runtime support for:
-
-- fact registry
-- belief graph
-- plot threads and obligations
-- capability / action boundary state
-- explicit visibility graph
-
-This is the biggest missing layer between the current prototype and a real narrative SRE engine.
-
-### 2. Upgrade replay into semantic replay
-
-Replay must stop being mostly structural event application and become a real time-point semantic check:
-
-- verify locked `post_state_snapshot`
-- consume visible facts, believed facts, active rules, and action windows
-- distinguish hidden-fact leaks from false beliefs
-- detect inactive-rule use and capability violations
-
-### 3. Upgrade causal validation
-
-Causal validation must explain not only "missing prerequisite" but also:
-
-- belief conflict
-- capability violation
-- plot obligation miss
-- rule activation misuse
-- replayed-state versus locked-post-state mismatch
-
-### 4. Replace ops-style metric denominators
-
-Core metrics must become narrative-native:
-
-- `causality_break_rate` should be based on checked outcomes
-- `visibility_leak_rate` should be based on checked visibility decisions
-- gate thresholds should respond to narrative defect density, not general issue volume
-
-### 5. Add real golden cases
-
-V2 should not stop at happy-path unit tests. It needs replay-oriented regression assets for:
-
-- locked post-state mismatch
-- hidden fact leak
-- false belief without visibility leak
-- capability violation
-- inactive rule use
-- unresolved plot obligation
+- snapshot referential integrity and logical freezing
+- locked post-state replay and observation-frame semantics
+- fail-closed replay, gate, and incident evidence paths
+- narrative-native metric denominators
+- separation between active requirements and historical review notes
 
 ## Quick start
 
@@ -229,7 +187,7 @@ Focus on:
 1. whether runtime state can express narrative invariants,
 2. whether replay is semantically authoritative,
 3. whether metrics/gates are narrative-native,
-4. whether the V2 requirements in codex-review/v2-pr-requirements-narrative-kernel.md are sufficient and correctly prioritized.
+4. whether the V2.2 requirements in codex-review/V2/V2.2-pr-requirements.md are sufficient and correctly prioritized.
 
 Use README.md, implementation_task_board.md, alpha_sre/, tests/, and codex-review/ as the primary review surface.
 ```

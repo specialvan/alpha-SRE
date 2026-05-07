@@ -79,10 +79,64 @@ Implementation note:
 ### Visibility leak rate
 
 - Purpose: measure how often hidden information influences character or system decisions.
-- Calculation: visibility leak cases / checked decisions.
+- Calculation: visibility leak cases / checked visibility decisions.
 - Input source: replay validation and review findings.
 - Use cases: knowledge boundary monitoring.
 - Gate use: yes.
+- Alarm use: yes.
+
+### Causality break rate
+
+- Purpose: measure broken causal chains.
+- Calculation: causality breaks / checked outcomes.
+- Input source: replay diff classification and causal validation.
+- Use cases: regression identification.
+- Gate use: yes.
+- Alarm use: yes.
+
+### Post-state mismatch rate
+
+- Purpose: measure replay/state disagreement against locked post-state artifacts.
+- Calculation: mismatched post-state surfaces / checked post-state surfaces.
+- Input source: replay post-state verification.
+- Use cases: locked replay audit.
+- Gate use: yes.
+- Alarm use: yes.
+
+### Belief conflict rate
+
+- Purpose: measure how often a replayed action follows a false belief that is already represented in state.
+- Calculation: belief conflicts / checked actor actions.
+- Input source: replay and causal validation.
+- Use cases: distinguish subjective error from hidden-fact leakage.
+- Gate use: optional, policy-driven.
+- Alarm use: yes when recurring.
+
+### Capability violation rate
+
+- Purpose: measure how often an actor performs an action denied by persisted capability state.
+- Calculation: capability violations / checked actor actions.
+- Input source: replay and causal validation.
+- Use cases: impossible-action monitoring.
+- Gate use: yes.
+- Alarm use: yes.
+
+### Inactive rule use rate
+
+- Purpose: measure how often an event depends on an inactive rule.
+- Calculation: inactive rule uses / checked rule activations.
+- Input source: replay and causal validation.
+- Use cases: world-rule activation monitoring.
+- Gate use: yes.
+- Alarm use: yes.
+
+### Plot obligation miss rate
+
+- Purpose: measure how often a due plot thread reaches payoff without discharge.
+- Calculation: plot obligation misses / checked plot obligations.
+- Input source: replay and causal validation.
+- Use cases: narrative obligation monitoring.
+- Gate use: configurable hard or soft.
 - Alarm use: yes.
 
 ## Narrative quality metrics
@@ -153,15 +207,6 @@ Implementation note:
 
 - current executable evidence can be sourced from structured `NarrativeQualityReviewRecord` artifacts that preserve introduced and resolved setup-item counts
 - when no setup items are introduced inside the measured window, the current baseline executable metric returns `1.0`
-
-### Causality break rate
-
-- Purpose: measure broken causal chains.
-- Calculation: causality breaks / checked transitions.
-- Input source: replay diff classification.
-- Use cases: regression identification.
-- Gate use: yes.
-- Alarm use: yes.
 
 ### Write-back omission rate
 

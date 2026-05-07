@@ -19,11 +19,24 @@ from .validation import ValidationIssue, ValidationResult
 from .metrics import compute_metrics
 from .replay import ObservationFrame, ReplayEngine, ReplayResult, ReplaySession
 from .review import NarrativeQualityReviewRecord
-from .state import NarrativeState, NarrativeSnapshot
+from .state import (
+    BeliefState,
+    CapabilityState,
+    FactState,
+    NarrativeState,
+    NarrativeSnapshot,
+    PlotThreadState,
+    VisibilityEdgeState,
+)
 
 __all__ = [
     "NarrativeSnapshot",
     "NarrativeState",
+    "FactState",
+    "BeliefState",
+    "PlotThreadState",
+    "CapabilityState",
+    "VisibilityEdgeState",
     "CausalFinding",
     "ObservationFrame",
     "ReplayEngine",

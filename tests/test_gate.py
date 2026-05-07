@@ -5,8 +5,9 @@ import unittest
 from alpha_sre.events import Command, Event
 from alpha_sre.gate import ConsistencyGate
 from alpha_sre.metrics import MetricSummary
-from alpha_sre.replay import ObservationFrame, ReplayEngine, ReplaySession
+from alpha_sre.replay import ObservationFrame, ReplayEngine, ReplayResult, ReplaySession
 from alpha_sre.state import CharacterState, NarrativeSnapshot, VisibilityScope
+from alpha_sre.validation import ValidationIssue
 
 
 def make_snapshot() -> NarrativeSnapshot:
@@ -41,6 +42,35 @@ class GateTests(unittest.TestCase):
         gate = ConsistencyGate()
         result = gate.evaluate(replay, MetricSummary(1.0, 0.0, 0.0, 1.0))
         self.assertTrue(result.allowed)
+
+    def test_gate_blocks_failed_replay_for_unlisted_issue(self):
+        snapshot = make_snapshot()
+        replay = ReplayResult(
+            ok=False,
+            state=snapshot,
+            issues=(
+                ValidationIssue(
+                    "dangling_character_memory",
+                    "character memory reference missing from snapshot",
+                    subject_id="c1",
+                    field="memory_references",
+                ),
+            ),
+        )
+        gate = ConsistencyGate()
+        result = gate.evaluate(replay, MetricSummary(1.0, 0.0, 0.0, 1.0))
+        self.assertFalse(result.allowed)
+        self.assertIn("dangling_character_memory", result.blocking_issues)
+
+    def test_gate_blocks_failed_replay_without_issues(self):
+        snapshot = make_snapshot()
+        replay = ReplayResult(ok=False, state=snapshot)
+
+        gate = ConsistencyGate()
+        result = gate.evaluate(replay, MetricSummary(1.0, 0.0, 0.0, 1.0))
+
+        self.assertFalse(result.allowed)
+        self.assertIn("replay_failed", result.blocking_issues)
 
     def test_gate_blocks_causal_break(self):
         snapshot = make_snapshot()

@@ -29,6 +29,10 @@ Each narrative outcome must map to:
 - a change in character behavior must be explainable by visible state or an explicit reveal
 - a change in world rules must come from an authorized rule event
 - a missing prerequisite is a validation failure, not a stylistic issue
+- a false belief that is present in state must be diagnosed separately from a hidden-fact leak
+- a denied capability must be diagnosed as a capability violation, not as generic causality failure
+- an inactive world rule must be diagnosed as inactive rule use
+- a due plot obligation without payoff must be diagnosed as plot obligation missed
 
 ## Failure classes
 
@@ -36,6 +40,11 @@ Each narrative outcome must map to:
 - missing state write-back
 - unauthorized overwrite
 - visibility leak
+- belief conflict
+- capability violation
+- inactive rule use
+- plot obligation missed
+- post-state mismatch
 - rule drift
 - contradictory event chain
 - untraceable outcome
@@ -48,6 +57,10 @@ Validation must detect when:
 - a hidden rule becomes visible too early
 - the system uses future knowledge to justify past behavior
 - a reveal event is missing but the effect depends on it
+- a belief is present but conflicts with canonical truth
+- an event depends on a capability that is denied in state
+- an event depends on a rule that is present but inactive
+- a plot thread reaches its payoff boundary without resolution
 
 ## Output
 
@@ -73,6 +86,11 @@ Minimum fields:
 - affected subject
 - replay evidence reference
 - recommended regression test
+- checked outcome count
+- checked visibility decision count
+- checked actor action count
+- checked plot obligation count
+- checked rule activation count
 
 Output rules:
 

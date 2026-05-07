@@ -40,6 +40,17 @@ class MetricSummary:
     character_ooc_rate: float = 0.0
     world_rule_violation_rate: float = 0.0
     foreshadowing_payoff_rate: float = 1.0
+    checked_outcome_count: int = 0
+    checked_visibility_decision_count: int = 0
+    checked_actor_action_count: int = 0
+    checked_plot_obligation_count: int = 0
+    checked_rule_activation_count: int = 0
+    checked_post_state_surface_count: int = 0
+    post_state_mismatch_rate: float = 0.0
+    belief_conflict_rate: float = 0.0
+    capability_violation_rate: float = 0.0
+    plot_obligation_miss_rate: float = 0.0
+    inactive_rule_use_rate: float = 0.0
 
 
 def _parse_timestamp(value: str | None) -> datetime | None:
@@ -94,7 +105,34 @@ def _estimate_surface_paths(snapshot: "NarrativeSnapshot") -> set[str]:
         surface_paths.add(f"world_rules.{rule_id}")
     for intent_id in snapshot.chapter_intents:
         surface_paths.add(f"chapter_intents.{intent_id}")
+    for fact_id in snapshot.facts:
+        surface_paths.add(f"facts.{fact_id}")
+    for belief_id in snapshot.beliefs:
+        surface_paths.add(f"beliefs.{belief_id}")
+    for thread_id in snapshot.plot_threads:
+        surface_paths.add(f"plot_threads.{thread_id}")
+    for capability_id in snapshot.capabilities:
+        surface_paths.add(f"capabilities.{capability_id}")
+    for edge_id in snapshot.visibility_edges:
+        surface_paths.add(f"visibility_edges.{edge_id}")
     return surface_paths
+
+
+def _issue_subjects(
+    replays: list[ReplayResult],
+    validations: list[CausalValidationResult],
+    code: str,
+) -> set[str]:
+    subjects: set[str] = set()
+    for replay in replays:
+        for issue in replay.issues:
+            if issue.code == code:
+                subjects.add(issue.subject_id or issue.field or code)
+    for validation in validations:
+        for issue in validation.issues:
+            if issue.code == code:
+                subjects.add(issue.subject_id or issue.field or code)
+    return subjects
 
 
 def _compute_edit_amplitude(replays: list[ReplayResult]) -> float:
@@ -127,11 +165,24 @@ def compute_metrics(
     total = max(len(replays), 1)
     successful = sum(1 for r in replays if r.ok)
     trace = sum(1 for r in replays if "missing_events" not in r.diffs) / total
-    total_issues = max(sum(len(v.issues) for v in validations), 1)
     total_checked_outcomes = sum(v.checked_outcome_count for v in validations)
     total_covered_outcomes = sum(v.covered_outcome_count for v in validations)
     total_checked_rule_changes = sum(v.checked_rule_change_count for v in validations)
     total_drift_rule_changes = sum(v.drift_rule_change_count for v in validations)
+    replay_visibility_checks = sum(r.checked_visibility_decision_count for r in replays)
+    validation_visibility_checks = sum(v.checked_visibility_decision_count for v in validations)
+    checked_visibility_decisions = replay_visibility_checks or validation_visibility_checks
+    replay_actor_action_checks = sum(r.checked_actor_action_count for r in replays)
+    validation_actor_action_checks = sum(v.checked_actor_action_count for v in validations)
+    checked_actor_actions = replay_actor_action_checks or validation_actor_action_checks
+    replay_plot_obligation_checks = sum(r.checked_plot_obligation_count for r in replays)
+    validation_plot_obligation_checks = sum(v.checked_plot_obligation_count for v in validations)
+    checked_plot_obligations = replay_plot_obligation_checks or validation_plot_obligation_checks
+    replay_rule_activation_checks = sum(r.checked_rule_activation_count for r in replays)
+    validation_rule_activation_checks = sum(v.checked_rule_activation_count for v in validations)
+    checked_rule_activations = replay_rule_activation_checks or validation_rule_activation_checks
+    checked_post_state_surfaces = sum(r.checked_post_state_surface_count for r in replays)
+    mismatched_post_state_surfaces = sum(r.mismatched_post_state_surface_count for r in replays)
     total_checked_write_backs = sum(r.checked_write_back_count for r in replays)
     total_omitted_write_backs = sum(r.omitted_write_back_count for r in replays)
     total_checked_memory_references = sum(r.checked_memory_reference_count for r in replays)
@@ -142,8 +193,12 @@ def compute_metrics(
         for finding in validation.findings
         if finding.affected_state_field is not None and finding.affected_state_field.endswith(".prerequisite_event_id")
     }
-    causality_breaks = sum(1 for v in validations for issue in v.issues if issue.code == "missing_precondition")
-    visibility_leaks = sum(1 for v in validations for issue in v.issues if issue.code == "visibility_leak")
+    causality_breaks = len(_issue_subjects(replays, validations, "missing_precondition"))
+    visibility_leaks = len(_issue_subjects(replays, validations, "visibility_leak"))
+    belief_conflicts = len(_issue_subjects(replays, validations, "belief_conflict"))
+    capability_violations = len(_issue_subjects(replays, validations, "capability_violation"))
+    plot_obligation_misses = len(_issue_subjects(replays, validations, "plot_obligation_missed"))
+    inactive_rule_uses = len(_issue_subjects(replays, validations, "inactive_rule_use"))
     if write_back_successes is None:
         write_back_success_rate = 1.0
     else:
@@ -236,8 +291,8 @@ def compute_metrics(
         )
     return MetricSummary(
         trace_completeness=trace,
-        causality_break_rate=causality_breaks / total_issues,
-        visibility_leak_rate=visibility_leaks / total_issues,
+        causality_break_rate=causality_breaks / total_checked_outcomes if total_checked_outcomes else 0.0,
+        visibility_leak_rate=visibility_leaks / checked_visibility_decisions if checked_visibility_decisions else 0.0,
         replay_availability=successful / total,
         causal_attribution_coverage=1.0 if total_checked_outcomes == 0 else total_covered_outcomes / total_checked_outcomes,
         rule_drift_rate=0.0 if total_checked_rule_changes == 0 else total_drift_rule_changes / total_checked_rule_changes,
@@ -257,4 +312,17 @@ def compute_metrics(
         character_ooc_rate=character_ooc_rate,
         world_rule_violation_rate=world_rule_violation_rate,
         foreshadowing_payoff_rate=foreshadowing_payoff_rate,
+        checked_outcome_count=total_checked_outcomes,
+        checked_visibility_decision_count=checked_visibility_decisions,
+        checked_actor_action_count=checked_actor_actions,
+        checked_plot_obligation_count=checked_plot_obligations,
+        checked_rule_activation_count=checked_rule_activations,
+        checked_post_state_surface_count=checked_post_state_surfaces,
+        post_state_mismatch_rate=(
+            mismatched_post_state_surfaces / checked_post_state_surfaces if checked_post_state_surfaces else 0.0
+        ),
+        belief_conflict_rate=belief_conflicts / checked_actor_actions if checked_actor_actions else 0.0,
+        capability_violation_rate=capability_violations / checked_actor_actions if checked_actor_actions else 0.0,
+        plot_obligation_miss_rate=plot_obligation_misses / checked_plot_obligations if checked_plot_obligations else 0.0,
+        inactive_rule_use_rate=inactive_rule_uses / checked_rule_activations if checked_rule_activations else 0.0,
     )

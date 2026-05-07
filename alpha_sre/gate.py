@@ -7,32 +7,6 @@ from .metrics import MetricSummary
 from .replay import ReplayResult
 
 
-CRITICAL_ISSUE_CODES = {
-    "policy_version_mismatch",
-    "schema_version_mismatch",
-    "state_identity_mismatch",
-    "visibility_version_mismatch",
-    "write_contract_mismatch",
-    "missing_events",
-    "missing_precondition",
-    "visibility_leak",
-    "unauthorized_overwrite",
-    "unsupported_event_type",
-    "command_mismatch",
-    "missing_character",
-    "missing_current_goal",
-    "invalid_memory_payload",
-    "invalid_world_rule_payload",
-    "impossible_action",
-    "missing_state_write_back",
-    "invalid_causal_order",
-    "duplicate_event_id",
-    "duplicate_causal_index",
-    "dangling_relationship",
-    "dangling_memory",
-}
-
-
 @dataclass(frozen=True)
 class GateResult:
     allowed: bool
@@ -58,13 +32,21 @@ class ConsistencyGate:
     max_edit_amplitude: float | None = None
     max_plot_inconsistency_rate: float | None = None
     max_world_rule_violation_rate: float | None = None
+    max_post_state_mismatch_rate: float = 0.0
+    max_capability_violation_rate: float = 0.0
+    max_inactive_rule_use_rate: float = 0.0
+    max_plot_obligation_miss_rate: float = 0.0
+    plot_obligation_miss_blocks: bool = True
 
     def evaluate(self, replay: ReplayResult, metrics: MetricSummary | None = None) -> GateResult:
         blocking: list[str] = []
         warnings: list[str] = []
 
         if not replay.ok:
-            blocking.extend(issue.code for issue in replay.issues if issue.code in CRITICAL_ISSUE_CODES or issue.code.endswith("_mismatch"))
+            if replay.issues:
+                blocking.extend(issue.code for issue in replay.issues)
+            else:
+                blocking.append("replay_failed")
 
         if metrics is not None:
             if metrics.trace_completeness < self.min_trace_completeness:
@@ -73,6 +55,17 @@ class ConsistencyGate:
                 blocking.append("causality_break_rate_above_threshold")
             if metrics.visibility_leak_rate > self.max_visibility_leak_rate:
                 blocking.append("visibility_leak_rate_above_threshold")
+            if metrics.post_state_mismatch_rate > self.max_post_state_mismatch_rate:
+                blocking.append("post_state_mismatch_rate_above_threshold")
+            if metrics.capability_violation_rate > self.max_capability_violation_rate:
+                blocking.append("capability_violation_rate_above_threshold")
+            if metrics.inactive_rule_use_rate > self.max_inactive_rule_use_rate:
+                blocking.append("inactive_rule_use_rate_above_threshold")
+            if metrics.plot_obligation_miss_rate > self.max_plot_obligation_miss_rate:
+                if self.plot_obligation_miss_blocks:
+                    blocking.append("plot_obligation_miss_rate_above_threshold")
+                else:
+                    warnings.append("plot_obligation_miss_rate_above_threshold")
             if metrics.causal_attribution_coverage < self.min_causal_attribution_coverage:
                 blocking.append("causal_attribution_coverage_below_threshold")
             if metrics.rule_drift_rate > self.max_rule_drift_rate:

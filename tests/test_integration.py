@@ -5,7 +5,7 @@ import unittest
 from alpha_sre.events import Command, Event
 from alpha_sre.incident import IncidentActionItem, IncidentReport
 from alpha_sre.integration import IntegrationBridge, ReadRequest, WriteBackRequest
-from alpha_sre.replay import ReplayEngine
+from alpha_sre.replay import ReplayEngine, ReplaySession
 from alpha_sre.state import CharacterState, NarrativeSnapshot, VisibilityScope
 
 
@@ -100,6 +100,41 @@ class IntegrationBridgeTests(unittest.TestCase):
         self.assertFalse(mismatch.ok)
         self.assertTrue(any(issue.code == "schema_version_mismatch" for issue in mismatch.issues))
 
+    def test_read_snapshot_accepts_minor_schema_upgrade(self):
+        bridge = IntegrationBridge()
+        snapshot = make_snapshot()
+        upgraded = NarrativeSnapshot(
+            snapshot_id=snapshot.snapshot_id,
+            state_identity=snapshot.state_identity,
+            schema_version="1.1",
+            policy_version=snapshot.policy_version,
+            visibility_version=snapshot.visibility_version,
+            created_at=snapshot.created_at,
+            characters=snapshot.characters,
+        )
+        ok = bridge.read_snapshot(ReadRequest(expected_schema_version="1.0"), upgraded)
+        self.assertTrue(ok.ok)
+
+    def test_read_snapshot_rejects_older_schema_than_expected(self):
+        bridge = IntegrationBridge()
+        snapshot = make_snapshot()
+        mismatch = bridge.read_snapshot(ReadRequest(expected_schema_version="1.1"), snapshot)
+        self.assertFalse(mismatch.ok)
+        self.assertTrue(any(issue.code == "schema_version_mismatch" for issue in mismatch.issues))
+
+    def test_read_snapshot_rejects_snapshot_with_dangling_reference(self):
+        bridge = IntegrationBridge()
+        snapshot = make_snapshot()
+        broken = snapshot.clone()
+        broken.characters["c1"] = CharacterState(
+            **{**broken.characters["c1"].__dict__, "relationship_links": ["rel-missing"]}
+        )
+
+        mismatch = bridge.read_snapshot(ReadRequest(expected_schema_version="1.0"), broken)
+
+        self.assertFalse(mismatch.ok)
+        self.assertTrue(any(issue.code == "dangling_character_relationship" for issue in mismatch.issues))
+
     def test_write_back_allows_authorized_update(self):
         bridge = IntegrationBridge()
         snapshot = make_snapshot()
@@ -128,6 +163,43 @@ class IntegrationBridgeTests(unittest.TestCase):
         self.assertGreater(result.metrics.edit_amplitude, 0.0)
         self.assertEqual(result.metrics.plot_inconsistency_rate, 0.0)
         self.assertEqual(result.metrics.world_rule_violation_rate, 0.0)
+
+    def test_write_back_accepts_minor_schema_upgrade(self):
+        bridge = IntegrationBridge()
+        snapshot = NarrativeSnapshot(
+            snapshot_id="s1",
+            state_identity="state-1",
+            schema_version="1.1",
+            policy_version="p1",
+            visibility_version="v1",
+            created_at="2026-05-06T00:00:00Z",
+            characters={
+                "c1": CharacterState(
+                    character_id="c1",
+                    role_name="protagonist",
+                    current_goal="find truth",
+                    emotional_state="focused",
+                    knowledge_scope=VisibilityScope.CHARACTER_LOCAL,
+                )
+            },
+        )
+        command = Command("cmd1", "edit", "op1", "chapter-1", "p1", "2026-05-06T00:00:00Z")
+        result = bridge.write_back(
+            WriteBackRequest(
+                command=command,
+                snapshot=snapshot,
+                events=(
+                    Event("e1", "cmd1", "update_goal", 1, "2026-05-06T00:00:01Z", "1", {"character_id": "c1", "current_goal": "protect ally"}),
+                ),
+                source_system="alpha-autopilot",
+                actor="editor-1",
+                expected_policy_version="p1",
+                expected_visibility_version="v1",
+                expected_schema_version="1.0",
+            )
+        )
+        self.assertTrue(result.ok)
+        self.assertEqual(result.replay.state.characters["c1"].current_goal, "protect ally")
 
     def test_write_back_metrics_include_snapshot_freshness(self):
         bridge = IntegrationBridge()
@@ -220,6 +292,39 @@ class IntegrationBridgeTests(unittest.TestCase):
         self.assertEqual(attempt.rollback_reason, "operator reverted pending publish")
         self.assertEqual(attempt.incident_id, "inc-1")
         self.assertEqual(attempt.derived_from_attempt_id, "rel-0")
+
+    def test_replay_session_accepts_compatible_schema_version(self):
+        snapshot = NarrativeSnapshot(
+            snapshot_id="s1",
+            state_identity="state-1",
+            schema_version="1.1",
+            policy_version="p1",
+            visibility_version="v1",
+            created_at="2026-05-06T00:00:00Z",
+            characters={
+                "c1": CharacterState(
+                    character_id="c1",
+                    role_name="protagonist",
+                    current_goal="find truth",
+                    emotional_state="focused",
+                    knowledge_scope=VisibilityScope.CHARACTER_LOCAL,
+                )
+            },
+        )
+        session = ReplaySession(
+            target_command=Command("cmd1", "edit", "op1", "chapter-1", "p1", "2026-05-06T00:00:00Z"),
+            ordered_event_chain=(
+                Event("e1", "cmd1", "update_goal", 1, "2026-05-06T00:00:01Z", "1", {"character_id": "c1", "current_goal": "protect ally"}),
+            ),
+            pre_state_snapshot=snapshot,
+            policy_version="p1",
+            prompt_version="chapter-intent-v1",
+            replay_operator_id="replay-op-1",
+            visibility_snapshot_version="v1",
+            narrative_state_schema_version="1.0",
+        )
+        result = ReplayEngine().replay_session(session)
+        self.assertTrue(result.ok)
 
     def test_drift_report_ignores_intended_state_change(self):
         bridge = IntegrationBridge()

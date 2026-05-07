@@ -92,7 +92,21 @@ Validation rules:
 - the input snapshot id must match the locked pre-state snapshot
 - an event or outcome that depends on memory outside `accessible memory ids` is a visibility leak
 - an event or outcome that depends on a fact inside `hidden fact ids` is a visibility leak
+- a false belief is distinct from a hidden-fact leak and must remain visible as its own diagnosis
 - blocked event or action types must be treated as impossible actions during replay diagnosis
+
+### Semantic replay contract
+
+Replay must consume the narrative kernel as executable state, not passive storage.
+
+Required semantic checks:
+
+- hidden facts must be checked against the observation frame and the persisted visibility graph
+- believed facts must resolve to persisted belief state when a replayed outcome claims subjective knowledge
+- denied capabilities must block the action that relied on them
+- inactive world rules must not authorize an event or outcome
+- plot obligations must be checked against thread state and deadline or payoff expectations
+- when a locked post-state snapshot is present, replay must compare the replayed state to the locked post-state and surface a structured post-state diff
 
 ## Identity and versioning rules
 
@@ -101,7 +115,7 @@ Validation rules:
 - `policy version` identifies the decision rules used during execution.
 - `visibility snapshot version` identifies the knowledge boundary in effect during execution.
 - A replay session must lock all three before execution starts.
-- State comparisons are only valid when snapshot schema versions are compatible.
+- State comparisons are only valid when snapshot schema versions are compatible under the schema evolution policy.
 
 ## Ordering rules
 
@@ -134,6 +148,12 @@ Replay may:
 - visibility diff
 - write-back omission diff
 - memory omission diff
+- post-state diff
+- checked visibility decision count
+- checked actor action count
+- checked plot obligation count
+- checked rule activation count
+- checked post-state surface count
 - failure classification
 - missing mechanism candidates
 - evidence references
@@ -164,6 +184,11 @@ Every replay result must classify the dominant failure mode:
 - `side_effect_leak`: replay was influenced by external mutable state
 - `mechanism_missing`: behavior failed because required operational logic did not exist
 - `visibility_leak`: replay shows a character acted on hidden information
+- `belief_conflict`: replay shows a character acted on a false belief that is present in state
+- `capability_violation`: replay shows an actor performed an action denied by persisted capability state
+- `inactive_rule_use`: replay shows an outcome depended on an inactive rule
+- `plot_obligation_missed`: replay shows a due plot obligation was not discharged
+- `post_state_mismatch`: replayed state does not match the locked post-state snapshot
 - `unknown`: divergence exists but evidence is insufficient
 
 Classification guidance:
@@ -174,6 +199,11 @@ Classification guidance:
 - `policy_drift` covers policy version divergence across the locked session
 - `mechanism_missing` covers unsupported replay behavior, missing write-back logic, or impossible actions that the system cannot explain structurally
 - `visibility_leak` covers use of hidden facts, inaccessible memories, or actor knowledge outside the observation frame
+- `belief_conflict` covers a recorded false belief that is present in state and explains the outcome without implying a hidden-fact leak
+- `capability_violation` covers actions that exceed persisted capability state
+- `inactive_rule_use` covers outcomes that depend on inactive world-rule state
+- `plot_obligation_missed` covers unresolved obligations that passed their payoff boundary
+- `post_state_mismatch` covers replayed state that disagrees with the locked post-state snapshot
 
 ## Success criteria
 
@@ -200,5 +230,9 @@ Replay work must include evidence for:
 - replay rejection for mixed schema versions
 - replay rejection for missing event boundaries
 - replay rejection for visibility leaks
+- replay rejection for false belief conflict without hidden-fact leak
+- replay rejection for capability violation
+- replay rejection for inactive world-rule use
+- replay rejection for locked post-state mismatch
 - mechanism-missing diagnosis from a reproduced incident
 - rollback-safe replay after a reverted policy version

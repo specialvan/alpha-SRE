@@ -48,6 +48,10 @@ def character_state_from_dict(data: dict[str, Any]):
         relationship_links=list(data.get("relationship_links", [])),
         active_constraints=list(data.get("active_constraints", [])),
         memory_references=list(data.get("memory_references", [])),
+        belief_ids=list(data.get("belief_ids", [])),
+        capability_ids=list(data.get("capability_ids", [])),
+        current_location=data.get("current_location"),
+        present_with_character_ids=list(data.get("present_with_character_ids", [])),
         knowledge_scope=VisibilityScope(data.get("knowledge_scope", VisibilityScope.CHARACTER_LOCAL.value)),
         schema_version=data.get("schema_version", "1.0"),
     )
@@ -106,6 +110,9 @@ def world_rule_state_from_dict(data: dict[str, Any]):
         enforcement_strength=data["enforcement_strength"],
         allowed_exceptions=list(data.get("allowed_exceptions", [])),
         provenance_source=data.get("provenance_source", ""),
+        activation_status=data.get("activation_status", "active"),
+        active_from_event_id=data.get("active_from_event_id"),
+        authority_mode=data.get("authority_mode", "canonical"),
         schema_version=data.get("schema_version", "1.0"),
     )
 
@@ -119,6 +126,86 @@ def chapter_intent_state_from_dict(data: dict[str, Any]):
         desired_narrative_effect=data["desired_narrative_effect"],
         required_preconditions=list(data.get("required_preconditions", [])),
         forbidden_outcomes=list(data.get("forbidden_outcomes", [])),
+        schema_version=data.get("schema_version", "1.0"),
+    )
+
+
+def fact_state_from_dict(data: dict[str, Any]):
+    from .state import FactState
+
+    return FactState(
+        fact_id=data["fact_id"],
+        fact_text=data["fact_text"],
+        fact_type=data["fact_type"],
+        introduced_by_event_id=data.get("introduced_by_event_id"),
+        valid_from_event_id=data.get("valid_from_event_id"),
+        valid_until_event_id=data.get("valid_until_event_id"),
+        canonical_truth_status=data["canonical_truth_status"],
+        related_character_ids=list(data.get("related_character_ids", [])),
+        related_rule_ids=list(data.get("related_rule_ids", [])),
+        schema_version=data.get("schema_version", "1.0"),
+    )
+
+
+def belief_state_from_dict(data: dict[str, Any]):
+    from .state import BeliefState
+
+    return BeliefState(
+        belief_id=data["belief_id"],
+        holder_character_id=data["holder_character_id"],
+        fact_id=data["fact_id"],
+        belief_status=data["belief_status"],
+        confidence=float(data["confidence"]),
+        derived_from_event_id=data.get("derived_from_event_id"),
+        derived_from_memory_ids=list(data.get("derived_from_memory_ids", [])),
+        contradicts_fact_id=data.get("contradicts_fact_id"),
+        schema_version=data.get("schema_version", "1.0"),
+    )
+
+
+def plot_thread_state_from_dict(data: dict[str, Any]):
+    from .state import PlotThreadState
+
+    return PlotThreadState(
+        thread_id=data["thread_id"],
+        thread_type=data["thread_type"],
+        status=data["status"],
+        introduced_by_event_id=data.get("introduced_by_event_id"),
+        required_payoff_by=data.get("required_payoff_by"),
+        blocking_event_ids=list(data.get("blocking_event_ids", [])),
+        resolution_event_id=data.get("resolution_event_id"),
+        affected_characters=list(data.get("affected_characters", [])),
+        schema_version=data.get("schema_version", "1.0"),
+    )
+
+
+def capability_state_from_dict(data: dict[str, Any]):
+    from .state import CapabilityState
+
+    return CapabilityState(
+        capability_id=data["capability_id"],
+        character_id=data["character_id"],
+        action_type=data["action_type"],
+        allowed=bool(data["allowed"]),
+        source_rule_id=data.get("source_rule_id"),
+        source_constraint_id=data.get("source_constraint_id"),
+        valid_from_event_id=data.get("valid_from_event_id"),
+        valid_until_event_id=data.get("valid_until_event_id"),
+        schema_version=data.get("schema_version", "1.0"),
+    )
+
+
+def visibility_edge_state_from_dict(data: dict[str, Any]):
+    from .state import VisibilityEdgeState
+
+    return VisibilityEdgeState(
+        visibility_edge_id=data["visibility_edge_id"],
+        fact_id=data["fact_id"],
+        viewer_id=data["viewer_id"],
+        visibility_status=data["visibility_status"],
+        visibility_source=data["visibility_source"],
+        valid_from_event_id=data.get("valid_from_event_id"),
+        valid_until_event_id=data.get("valid_until_event_id"),
         schema_version=data.get("schema_version", "1.0"),
     )
 
@@ -139,6 +226,11 @@ def snapshot_from_dict(data: dict[str, Any]):
         constraints={key: constraint_state_from_dict(value) for key, value in data.get("constraints", {}).items()},
         world_rules={key: world_rule_state_from_dict(value) for key, value in data.get("world_rules", {}).items()},
         chapter_intents={key: chapter_intent_state_from_dict(value) for key, value in data.get("chapter_intents", {}).items()},
+        facts={key: fact_state_from_dict(value) for key, value in data.get("facts", {}).items()},
+        beliefs={key: belief_state_from_dict(value) for key, value in data.get("beliefs", {}).items()},
+        plot_threads={key: plot_thread_state_from_dict(value) for key, value in data.get("plot_threads", {}).items()},
+        capabilities={key: capability_state_from_dict(value) for key, value in data.get("capabilities", {}).items()},
+        visibility_edges={key: visibility_edge_state_from_dict(value) for key, value in data.get("visibility_edges", {}).items()},
     )
 
 
@@ -356,6 +448,11 @@ def causal_validation_result_from_dict(data: dict[str, Any]):
         int(data.get("covered_outcome_count", 0)),
         int(data.get("checked_rule_change_count", 0)),
         int(data.get("drift_rule_change_count", 0)),
+        int(data.get("checked_visibility_decision_count", 0)),
+        int(data.get("checked_actor_action_count", 0)),
+        int(data.get("checked_plot_obligation_count", 0)),
+        int(data.get("checked_rule_activation_count", 0)),
+        int(data.get("checked_post_state_surface_count", 0)),
     )
 
 
@@ -391,6 +488,13 @@ def replay_result_from_dict(data: dict[str, Any]):
         checked_memory_reference_count=int(data.get("checked_memory_reference_count", 0)),
         omitted_memory_reference_count=int(data.get("omitted_memory_reference_count", 0)),
         memory_omission_diff=tuple(data.get("memory_omission_diff", ())),
+        checked_visibility_decision_count=int(data.get("checked_visibility_decision_count", 0)),
+        checked_actor_action_count=int(data.get("checked_actor_action_count", 0)),
+        checked_plot_obligation_count=int(data.get("checked_plot_obligation_count", 0)),
+        checked_rule_activation_count=int(data.get("checked_rule_activation_count", 0)),
+        checked_post_state_surface_count=int(data.get("checked_post_state_surface_count", 0)),
+        mismatched_post_state_surface_count=int(data.get("mismatched_post_state_surface_count", 0)),
+        post_state_diff=tuple(data.get("post_state_diff", ())),
     )
 
 
@@ -430,4 +534,15 @@ def metric_summary_from_dict(data: dict[str, Any]):
         character_ooc_rate=float(data.get("character_ooc_rate", 0.0)),
         world_rule_violation_rate=float(data.get("world_rule_violation_rate", 0.0)),
         foreshadowing_payoff_rate=float(data.get("foreshadowing_payoff_rate", 1.0)),
+        checked_outcome_count=int(data.get("checked_outcome_count", 0)),
+        checked_visibility_decision_count=int(data.get("checked_visibility_decision_count", 0)),
+        checked_actor_action_count=int(data.get("checked_actor_action_count", 0)),
+        checked_plot_obligation_count=int(data.get("checked_plot_obligation_count", 0)),
+        checked_rule_activation_count=int(data.get("checked_rule_activation_count", 0)),
+        checked_post_state_surface_count=int(data.get("checked_post_state_surface_count", 0)),
+        post_state_mismatch_rate=float(data.get("post_state_mismatch_rate", 0.0)),
+        belief_conflict_rate=float(data.get("belief_conflict_rate", 0.0)),
+        capability_violation_rate=float(data.get("capability_violation_rate", 0.0)),
+        plot_obligation_miss_rate=float(data.get("plot_obligation_miss_rate", 0.0)),
+        inactive_rule_use_rate=float(data.get("inactive_rule_use_rate", 0.0)),
     )

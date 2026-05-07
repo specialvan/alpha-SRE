@@ -79,3 +79,71 @@ Build the standalone narrative SRE control plane before integrating with `alpha-
 - Integration plan hardening: complete
 - Active implementation preparation: in progress through `alpha_sre/` and `tests/`
 - Experimental items: not started
+
+## V2 semantic upgrade slices
+
+### V2-A. Narrative kernel foundation
+
+- Layer: semantic upgrade
+- Status: complete
+- Dependency: V1 baseline state, serialization, replay, validation, gate, and artifacts
+- Primary specs: `narrative_state_schema.md`, `knowledge_visibility_spec.md`
+- Deliverable: first-class fact, belief, plot-thread, capability, and visibility-edge state primitives wired into `NarrativeSnapshot`
+- Acceptance: kernel fields serialize round-trip; snapshot validation rejects dangling belief facts, visibility viewers, capability actors, and invalid plot obligation states
+- Execution type: executable state kernel and failure-class-first tests in `alpha_sre/state.py`, `alpha_sre/serialization.py`, and `tests/test_narrative_state_kernel.py`
+- Owner: Codex
+
+### V2-B. Semantic replay consumption
+
+- Layer: semantic upgrade
+- Status: complete
+- Dependency: V2-A
+- Primary specs: `replay_spec.md`, `knowledge_visibility_spec.md`, `causal_validation_spec.md`
+- Deliverable: locked post-state verification and observation-frame semantics backed by the V2 narrative kernel
+- Acceptance: replay distinguishes hidden fact leaks from false belief conflicts and reports capability, inactive-rule, plot-obligation, and post-state mismatch failures
+- Execution type: planned follow-up implementation in `alpha_sre/replay.py` and `alpha_sre/causal_validation.py`
+- Owner: Codex
+
+### V2-C. Narrative-native causal taxonomy
+
+- Layer: semantic upgrade
+- Status: complete
+- Dependency: V2-B
+- Primary specs: `causal_validation_spec.md`
+- Deliverable: structured causal findings for belief conflict, capability violation, inactive rule use, plot obligation miss, and post-state mismatch attribution
+- Acceptance: validation emits concrete narrative-native failure classes with stable replay evidence references
+- Execution type: executable causal validation and regression-first tests in `alpha_sre/causal_validation.py` and `tests/`
+- Owner: Codex
+
+### V2-D. Narrative-native metrics and gate semantics
+
+- Layer: semantic upgrade
+- Status: complete
+- Dependency: V2-B, V2-C
+- Primary specs: `consistency_metric_catalog.md`, `test_governance.md`, `execution_governance.md`
+- Deliverable: checked-unit metrics, migrated denominators, and gate thresholds for narrative-native failure classes
+- Acceptance: causality break and visibility leak rates use checked denominators, and gate logic can block or soften plot-obligation misses by policy
+- Execution type: executable metric and gate updates in `alpha_sre/metrics.py` and `alpha_sre/gate.py`
+- Owner: Codex
+
+### V2-E. Regression and golden cases
+
+- Layer: semantic upgrade
+- Status: complete
+- Dependency: V2-A, V2-B, V2-C, V2-D
+- Primary specs: `replay_spec.md`, `causal_validation_spec.md`, `consistency_metric_catalog.md`
+- Deliverable: locked post-state, hidden-fact, false-belief, capability, inactive-rule, and plot-obligation regression cases
+- Acceptance: golden tests reproduce the intended narrative failure classes and metric denominators
+- Execution type: executable regression coverage in `tests/test_replay_semantics.py` and `tests/test_metrics_narrative_denominators.py`
+- Owner: Codex
+
+### V2-F. Schema evolution policy
+
+- Layer: semantic hardening
+- Status: complete
+- Dependency: V2-A, V2-B
+- Primary specs: `schema_evolution_policy.md`
+- Deliverable: explicit narrative schema compatibility rule for compatible minor upgrades and incompatible major jumps
+- Acceptance: snapshot, replay, and write-back validation accept compatible schema versions and reject malformed or incompatible upgrades
+- Execution type: helper-based compatibility checks in `alpha_sre/versioning.py`, `alpha_sre/replay.py`, and `alpha_sre/integration.py`
+- Owner: Codex

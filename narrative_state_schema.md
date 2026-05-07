@@ -14,6 +14,11 @@ The state model must support:
 - memory state
 - knowledge visibility
 - chapter intent
+- fact registry
+- belief graph
+- plot thread or obligation state
+- capability and action boundaries
+- persisted visibility graph
 
 ## Core entities
 
@@ -28,6 +33,10 @@ Required fields:
 - relationship links
 - active constraints
 - memory references
+- belief ids
+- capability ids
+- current location
+- present-with character ids
 - knowledge scope
 - schema version
 
@@ -78,6 +87,9 @@ Required fields:
 - enforcement strength
 - allowed exceptions
 - provenance source
+- activation status
+- active from event id
+- authority mode
 - schema version
 
 ### Chapter intent state
@@ -90,6 +102,139 @@ Required fields:
 - required preconditions
 - forbidden outcomes
 - schema version
+
+### Fact state
+
+Facts are first-class narrative truth records. Visibility, belief, replay, and metrics should point to stable fact ids instead of prose-only claims.
+
+Required fields:
+
+- fact id
+- fact text
+- fact type
+- introduced by event id
+- valid from event id
+- valid until event id
+- canonical truth status
+- related character ids
+- related rule ids
+- schema version
+
+Allowed canonical truth statuses:
+
+- true
+- false
+- unknown
+- contested
+- retracted
+
+### Belief state
+
+Beliefs model a character's subjective state separately from canonical truth.
+
+Required fields:
+
+- belief id
+- holder character id
+- fact id
+- belief status
+- confidence
+- derived from event id
+- derived from memory ids
+- contradicts fact id
+- schema version
+
+Allowed belief statuses:
+
+- certain
+- suspected
+- false
+- retracted
+
+Rules:
+
+- every belief must point to a fact in the snapshot
+- a false or mistaken belief may point to a canonical-false fact and may reference the canonical fact it contradicts
+- belief-derived behavior must not be automatically classified as a visibility leak when the belief is present in state
+
+### Plot thread state
+
+Plot threads and obligations model open narrative commitments.
+
+Required fields:
+
+- thread id
+- thread type
+- status
+- introduced by event id
+- required payoff by
+- blocking event ids
+- resolution event id
+- affected characters
+- schema version
+
+Allowed statuses:
+
+- open
+- active
+- blocked
+- resolved
+- dropped
+
+Rules:
+
+- unresolved obligations stay visible to validation and gate logic until resolved or dropped
+- resolved plot threads must name the resolution event
+
+### Capability state
+
+Capabilities model whether an actor can perform an action at a given narrative point.
+
+Required fields:
+
+- capability id
+- character id
+- action type
+- allowed
+- source rule id
+- source constraint id
+- valid from event id
+- valid until event id
+- schema version
+
+Rules:
+
+- capability character ids must exist in the snapshot
+- source rule and constraint references must resolve when present
+- observation-frame action windows must not contradict persisted capability state in semantic replay
+
+### Visibility edge state
+
+Visibility edges are the persisted source of truth for fact-to-viewer knowledge boundaries.
+
+Required fields:
+
+- visibility edge id
+- fact id
+- viewer id
+- visibility status
+- visibility source
+- valid from event id
+- valid until event id
+- schema version
+
+Allowed visibility statuses:
+
+- visible
+- hidden
+- narrator_only
+- system_only
+
+Rules:
+
+- every visibility edge must point to a fact
+- viewer ids must be a character id, `narrator`, or `system`
+- observation frames may narrow visibility for a replay step, but must remain attributable to persisted visibility edges
 
 ## Knowledge visibility model
 
@@ -141,3 +286,7 @@ Replay reads this schema to reconstruct:
 - every character decision must reference visible facts only
 - every relationship change must have a causal event
 - every world rule change must be attributable to an authorized source
+- fact, belief, visibility, capability, and plot-thread references must resolve inside the snapshot
+- invalid belief, plot-thread, rule activation, and visibility statuses must be rejected
+- character belief ids and capability ids must point to existing kernel records
+- hidden facts, false beliefs, impossible actions, and unresolved obligations must be representable before replay consumes them

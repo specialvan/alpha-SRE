@@ -9,6 +9,7 @@ from .incident import IncidentReport
 from .metrics import MetricSummary, compute_metrics
 from .replay import ReplayEngine, ReplayResult
 from .state import NarrativeSnapshot
+from .versioning import schema_versions_compatible
 from .validation import ValidationIssue
 
 READ_CONTRACT_VERSION = "1.0"
@@ -116,6 +117,11 @@ def _snapshot_signature(snapshot: NarrativeSnapshot) -> Dict[str, Any]:
         "memory_ids": tuple(sorted(snapshot.memories)),
         "world_rule_ids": tuple(sorted(snapshot.world_rules)),
         "chapter_intent_ids": tuple(sorted(snapshot.chapter_intents)),
+        "fact_ids": tuple(sorted(snapshot.facts)),
+        "belief_ids": tuple(sorted(snapshot.beliefs)),
+        "plot_thread_ids": tuple(sorted(snapshot.plot_threads)),
+        "capability_ids": tuple(sorted(snapshot.capabilities)),
+        "visibility_edge_ids": tuple(sorted(snapshot.visibility_edges)),
     }
 
 
@@ -137,11 +143,11 @@ class IntegrationBridge:
                     subject_id=snapshot.snapshot_id,
                 )
             )
-        if request.expected_schema_version and request.expected_schema_version != snapshot.schema_version:
+        if request.expected_schema_version and not schema_versions_compatible(request.expected_schema_version, snapshot.schema_version):
             issues.append(
                 ValidationIssue(
                     "schema_version_mismatch",
-                    "requested schema version does not match snapshot",
+                    "requested schema version is not compatible with snapshot",
                     subject_id=snapshot.snapshot_id,
                 )
             )
@@ -153,6 +159,7 @@ class IntegrationBridge:
                     subject_id=snapshot.snapshot_id,
                 )
             )
+        issues.extend(snapshot.validate().issues)
         if issues:
             return ReadResponse(False, None, tuple(issues))
         return ReadResponse(True, snapshot)
@@ -261,11 +268,11 @@ class IntegrationBridge:
                     subject_id=request.command.command_id,
                 )
             )
-        if request.expected_schema_version != request.snapshot.schema_version:
+        if not schema_versions_compatible(request.expected_schema_version, request.snapshot.schema_version):
             issues.append(
                 ValidationIssue(
                     "schema_version_mismatch",
-                    "write-back schema version does not match snapshot",
+                    "write-back schema version is not compatible with snapshot",
                     subject_id=request.command.command_id,
                 )
             )
