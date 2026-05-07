@@ -319,11 +319,50 @@ const seededIndex: FrontendArtifactIndex = {
 const rawArtifacts: Record<string, unknown> = {
   'artifacts/bundles/post-state-mismatch.json': {
     bundle_version: '1.0',
+    command: {
+      command_id: 'cmd-v2',
+      command_type: 'edit',
+      operator_id: 'replay-op-1',
+      target_id: 'chapter-1',
+      policy_version: 'p1',
+      created_at: '2026-05-07T16:00:00Z',
+    },
     snapshot: {
       snapshot_id: 's-v2-pre',
+      state_identity: 'state-v2',
+      schema_version: '1.0',
+      policy_version: 'p1',
+      visibility_version: 'v2',
+      created_at: '2026-05-07T15:59:00Z',
     },
+    events: [
+      {
+        event_id: 'e1',
+        command_id: 'cmd-v2',
+        event_type: 'update_goal',
+        causal_order_index: 1,
+        created_at: '2026-05-07T16:00:00Z',
+        policy_version: 'p1',
+        payload: {
+          character_id: 'c1',
+          current_goal: 'protect ally',
+        },
+      },
+    ],
     replay: {
+      ok: false,
       failure_classification: 'post_state_mismatch',
+      evidence_references: ['command:cmd-v2', 'snapshot:s-v2-pre', 'event:e1'],
+      issues: [
+        {
+          code: 'post_state_mismatch',
+          message: 'post_state_mismatch detected during locked replay verification',
+          subject_id: 'cmd-v2',
+          field: 'characters.c1.current_goal',
+          recommended_regression_test:
+            'replay_regression::locked_post_state_mismatch_visible',
+        },
+      ],
       post_state_diff: ['characters.c1.current_goal'],
     },
     metrics: {
@@ -334,6 +373,16 @@ const rawArtifacts: Record<string, unknown> = {
       allowed: false,
       blocking_issues: ['post_state_mismatch'],
       warnings: [],
+    },
+    session: {
+      policy_version: 'p1',
+      prompt_version: 'chapter-intent-v2',
+      replay_operator_id: 'replay-op-1',
+      visibility_snapshot_version: 'v2',
+      narrative_state_schema_version: '1.0',
+      observation_frame: {
+        replay_id: 'replay-v2',
+      },
     },
   },
   'artifacts/incidents/inc-post-state.json': {
@@ -411,7 +460,7 @@ describe('provider contract', () => {
     const metrics = await provider.getMetrics({ timeRange: '7d' })
     expect(metrics.summary.post_state_mismatch_rate).toBe(1)
     expect(metrics.summary.checked_post_state_surface_count).toBe(1)
-    expect(metrics.timeSeries[0].points).toEqual([0.5, 1])
+    expect(metrics.timeSeries[0].points).toEqual([1])
 
     const compactMetrics = await provider.getMetrics({ timeRange: '24h' })
     expect(compactMetrics.timeSeries[0].points).toEqual([1])
@@ -433,5 +482,124 @@ describe('provider contract', () => {
 
     const review = await mockProvider.getReview('review:review-post-state')
     expect(review.evidenceReferences).toContain('event:e1')
+  })
+
+  it('artifact provider derives replay surfaces from a catalog-only index plus raw artifacts', async () => {
+    const catalogOnlyIndex = {
+      catalog_version: '1.0',
+      field_sources: {
+        artifact_ref: 'catalog_metadata',
+        artifact_kind: 'catalog_metadata',
+        relative_path: 'catalog_metadata',
+        native_primary_id: 'native_artifact',
+      },
+      artifacts: [
+        {
+          artifact_ref: 'bundle:post-state-mismatch',
+          artifact_kind: 'replay_bundle',
+          relative_path: 'bundles/post-state-mismatch.json',
+          native_primary_id: 'cmd-v2',
+        },
+        {
+          artifact_ref: 'incident:inc-post-state',
+          artifact_kind: 'incident_report',
+          relative_path: 'incidents/inc-post-state.json',
+          native_primary_id: 'inc-post-state',
+        },
+        {
+          artifact_ref: 'release:rel-post-state',
+          artifact_kind: 'release_attempt_record',
+          relative_path: 'releases/rel-post-state.json',
+          native_primary_id: 'rel-post-state',
+        },
+        {
+          artifact_ref: 'review:review-post-state',
+          artifact_kind: 'quality_review_record',
+          relative_path: 'reviews/review-post-state.json',
+          native_primary_id: 'review-post-state',
+        },
+      ],
+    } as unknown as FrontendArtifactIndex
+    const backendRawArtifacts = {
+      'bundles/post-state-mismatch.json': rawArtifacts['artifacts/bundles/post-state-mismatch.json'],
+      'incidents/inc-post-state.json': {
+        artifact_version: '1.0',
+        incident_id: 'inc-post-state',
+        title: 'Post-state mismatch incident',
+        severity: 'high',
+        status: 'open',
+        date_opened: '2026-05-07',
+        incident_owner: 'oncall-1',
+        locked_command_id: 'cmd-v2',
+        locked_event_chain_reference: 'bundle:post-state-mismatch',
+        pre_state_snapshot_id: 's-v2-pre',
+        primary_cause: 'Locked post-state surface diverged.',
+        required_regression_test: 'replay_regression::locked_post_state_mismatch_visible',
+        evidence_references: ['event:e1', 'snapshot:s-v2-pre'],
+      },
+      'releases/rel-post-state.json': {
+        contract_version: '1.0',
+        attempt_id: 'rel-post-state',
+        triggering_command_id: 'cmd-v2',
+        started_at: '2026-05-07T16:05:00Z',
+        source_snapshot_id: 's-v2-pre',
+        source_system: 'alpha-autopilot',
+        actor: 'operator-1',
+        write_back_ok: false,
+        gate_allowed: false,
+        drift_detected: false,
+        manual_rollback_performed: true,
+        rollback_reason: 'operator reverted pending publish',
+        incident_id: 'inc-post-state',
+      },
+      'reviews/review-post-state.json': {
+        contract_version: '1.0',
+        review_id: 'review-post-state',
+        source_artifact_reference: 'bundle:post-state-mismatch',
+        checked_segment_count: 4,
+        ooc_incident_count: 1,
+        checked_scene_count: 2,
+        world_rule_violation_count: 0,
+        introduced_setup_item_count: 2,
+        resolved_setup_item_count: 1,
+        evidence_references: ['event:e1'],
+      },
+    }
+
+    const provider = createArtifactProvider({
+      indexLoader: async () => catalogOnlyIndex,
+      artifactLoader: async (path: string) => backendRawArtifacts[path as keyof typeof backendRawArtifacts],
+    })
+
+    const artifacts = await provider.listArtifacts({ page: 1, pageSize: 10 })
+    expect(artifacts.total).toBe(4)
+
+    const snapshots = await provider.listSnapshots({ page: 1, pageSize: 10 })
+    expect(snapshots.items[0].snapshotId).toBe('s-v2-pre')
+
+    const replay = await provider.getReplayBundle('bundle:post-state-mismatch')
+    expect(replay.commandId).toBe('cmd-v2')
+    expect(replay.failureClassification).toBe('post_state_mismatch')
+
+    const validation = await provider.getValidationForReplay(
+      'bundle:post-state-mismatch',
+    )
+    expect(validation.findings[0].affectedField).toBe('characters.c1.current_goal')
+
+    const releases = await provider.listReleaseAttempts({ page: 1, pageSize: 10 })
+    expect(releases.items[0].attemptId).toBe('rel-post-state')
+    expect(releases.items[0].links.snapshotRef).toBe('snapshot:s-v2-pre')
+    expect(releases.items[0].links.replayRef).toBe('bundle:post-state-mismatch')
+    expect(releases.items[0].links.gateRef).toBe('gate:bundle:post-state-mismatch')
+    expect(releases.items[0].links.incidentRef).toBe('incident:inc-post-state')
+
+    const incident = await provider.getIncident('incident:inc-post-state')
+    expect(incident.links.replayRef).toBe('bundle:post-state-mismatch')
+    expect(incident.links.validationRef).toBe('validation:bundle:post-state-mismatch')
+    expect(incident.links.releaseRef).toBe('release:rel-post-state')
+
+    const review = await provider.getReview('review:review-post-state')
+    expect(review.links.artifactRef).toBe('bundle:post-state-mismatch')
+    expect(review.links.replayRef).toBe('bundle:post-state-mismatch')
   })
 })

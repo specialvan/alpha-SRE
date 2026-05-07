@@ -396,7 +396,7 @@ class ReplayEngine:
         if issues:
             return ReplayResult(
                 False,
-                snapshot,
+                snapshot.clone(),
                 [issue.code for issue in issues],
                 issues=tuple(issues),
                 failure_classification=_classify_failure(issues),

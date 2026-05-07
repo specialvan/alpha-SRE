@@ -23,3 +23,8 @@ Define how narrative state schema versions may evolve without making replay or w
 - compatibility never overrides policy version, visibility version, or locked post-state checks
 - compatibility only governs schema shape, not narrative authority
 
+## Artifact read policy
+
+- replay bundle, incident report, release attempt, and quality review artifacts must carry their own artifact or contract version field
+- missing or unsupported artifact versions must fail explicitly during load; they must not silently downgrade to a default version
+- future artifact upgrades must choose one explicit strategy per loader: compatible read, explicit migration, or explicit failure

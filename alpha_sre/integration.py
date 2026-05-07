@@ -162,7 +162,7 @@ class IntegrationBridge:
         issues.extend(snapshot.validate().issues)
         if issues:
             return ReadResponse(False, None, tuple(issues))
-        return ReadResponse(True, snapshot)
+        return ReadResponse(True, snapshot.clone())
 
     def build_drift_report(self, source_snapshot: NarrativeSnapshot, replay_result: ReplayResult) -> ReplayDriftReport:
         source_signature = _snapshot_signature(source_snapshot)

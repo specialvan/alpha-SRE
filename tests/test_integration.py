@@ -115,6 +115,22 @@ class IntegrationBridgeTests(unittest.TestCase):
         ok = bridge.read_snapshot(ReadRequest(expected_schema_version="1.0"), upgraded)
         self.assertTrue(ok.ok)
 
+    def test_read_snapshot_returns_defensive_copy(self):
+        bridge = IntegrationBridge()
+        snapshot = make_snapshot()
+
+        result = bridge.read_snapshot(ReadRequest(expected_schema_version="1.0"), snapshot)
+
+        self.assertTrue(result.ok)
+        self.assertIsNotNone(result.snapshot)
+        self.assertEqual(result.snapshot.characters["c1"].current_goal, "find truth")
+
+        snapshot.characters["c1"] = CharacterState(
+            **{**snapshot.characters["c1"].__dict__, "current_goal": "mutated after read"}
+        )
+
+        self.assertEqual(result.snapshot.characters["c1"].current_goal, "find truth")
+
     def test_read_snapshot_rejects_older_schema_than_expected(self):
         bridge = IntegrationBridge()
         snapshot = make_snapshot()

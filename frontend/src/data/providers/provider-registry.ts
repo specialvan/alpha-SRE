@@ -12,7 +12,14 @@ const seededMockProvider = createMockProvider({
 
 const artifactProvider = createArtifactProvider({
   indexLoader: () => fetchJsonOrThrow<FrontendArtifactIndex>('/artifacts/index.json'),
-  artifactLoader: (path: string) => fetchJsonOrThrow(`/${path}`),
+  artifactLoader: (path: string) => {
+    const normalizedPath = path.replace(/^\/+/, '')
+    const publicPath = normalizedPath.startsWith('artifacts/')
+      ? `/${normalizedPath}`
+      : `/artifacts/${normalizedPath}`
+
+    return fetchJsonOrThrow(publicPath)
+  },
 })
 
 interface RuntimeEnv {

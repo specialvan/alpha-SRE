@@ -1,12 +1,19 @@
 {
+  "artifact_version": "1.0",
   "incident_id": "inc-post-state",
   "title": "Post-state mismatch incident",
   "severity": "high",
   "status": "open",
   "date_opened": "2026-05-07",
   "incident_owner": "oncall-1",
+  "triggering_command_id": "cmd-v2",
+  "suspected_failure_classification": "post_state_mismatch",
   "locked_command_id": "cmd-v2",
+  "locked_event_chain_reference": "bundle:post-state-mismatch",
   "pre_state_snapshot_id": "s-v2-pre",
+  "rollback_triggered": true,
+  "rollback_action_taken": "blocked pending write-back",
+  "primary_cause": "Locked post-state surface diverged.",
   "required_regression_test": "replay_regression::locked_post_state_mismatch_visible",
   "evidence_references": ["event:e1", "snapshot:s-v2-pre"]
 }

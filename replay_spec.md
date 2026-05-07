@@ -45,6 +45,12 @@ Required fields:
 - created timestamp
 - artifact references
 
+Snapshot boundary rules:
+
+- a validated snapshot must behave as logically frozen evidence, not as a caller-owned mutable working buffer
+- replay must defensively clone a locked snapshot before returning it through result artifacts, including failure paths that exit before event application
+- later caller mutation of the source snapshot must not rewrite replay, drift, or incident evidence derived from that snapshot
+
 ## Replay session input contract
 
 A replay session must declare:
@@ -132,6 +138,7 @@ Replay must not:
 - mutate production state
 - emit write-back calls to `alpha-autopilot`
 - overwrite source artifacts
+- expose replay evidence that still aliases caller-owned mutable snapshot containers
 
 Replay may:
 

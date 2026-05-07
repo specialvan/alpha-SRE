@@ -45,6 +45,7 @@ Minimum response contract:
 - schema version
 - visibility version
 - artifact reference
+- snapshot payload returned as a defensive copy or equivalent logically frozen artifact
 
 Rejection rules:
 

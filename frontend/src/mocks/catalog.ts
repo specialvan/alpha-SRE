@@ -447,7 +447,11 @@ function buildReplayCase(seed: ReplayCaseSeed) {
         { key: 'snapshot' as const, label: 'Snapshot', summary: `Locked snapshot ${seed.snapshotId}.` },
         { key: 'replay' as const, label: 'Replay', summary: 'Replay result and event chain.' },
         { key: 'validation' as const, label: 'Validation', summary: 'Structured finding list.' },
-        { key: 'metrics' as const, label: 'Metrics', summary: 'Replay-scoped metrics.' },
+        {
+          key: 'metrics' as const,
+          label: 'Metrics',
+          summary: 'Global aggregate metrics preview; replay-local metrics remain in artifact JSON.',
+        },
         { key: 'gate' as const, label: 'Gate', summary: 'Blocking gate evidence.' },
       ],
       links: {

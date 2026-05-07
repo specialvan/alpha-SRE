@@ -1,4 +1,5 @@
 {
+  "contract_version": "1.0",
   "attempt_id": "rel-post-state",
   "triggering_command_id": "cmd-v2",
   "started_at": "2026-05-07T16:05:00Z",

@@ -1,13 +1,13 @@
 # alpha-SRE Frontend
 
-This workspace contains the V3.2 React SPA for the `alpha-SRE` control plane.
+This workspace contains the V3.3 React SPA for the `alpha-SRE` control plane.
 
 ## Purpose
 
 The frontend is artifact-first and mock-first:
 
 - `mock` mode serves seeded control-plane data from `src/mocks/`
-- `artifact` mode reads JSON bundles from `public/artifacts/`
+- `artifact` mode reads a repo-native catalog plus raw JSON artifacts from `public/artifacts/`
 
 Both modes resolve through the same `SreDataProvider` interface.
 
@@ -31,7 +31,7 @@ npm run dev
 Use the shell `Data mode` switcher in the app header:
 
 - `mock`: deterministic seeded fixtures for replay, validation, metrics, review, incident, and release flows
-- `artifact`: reads the artifact index and raw JSON files from `public/artifacts/`
+- `artifact`: reads `index.json` as the catalog (`CAT`) and materializes replay/validation/metrics/review/incident/release surfaces from the raw JSON artifacts it references
 
 In development, mock mode is also backed by MSW so the SPA can be exercised without a backend API.
 In a built preview or static deployment, mock mode falls back to the seeded in-memory provider instead of
@@ -48,7 +48,7 @@ The shell search bar supports direct ref routing:
 - `review:<reviewRef>`
 - `release:<releaseRef>`
 
-Bare `bundle:<bundleRef>` input still routes to replay detail because replay refs are bundle refs in V3.2.
+Bare `bundle:<bundleRef>` input still routes to replay detail because replay refs are bundle refs in V3.3.
 
 ## Artifact Layout
 
@@ -65,7 +65,15 @@ The seeded sample files live under:
 - `frontend/public/artifacts/releases/`
 - `frontend/public/artifacts/reviews/`
 
-If you add new artifact-mode fixtures, update `index.json` with stable refs and matching file paths.
+`index.json` is the catalog contract, not a front-end-only aggregate fixture. It should match the
+backend `JsonArtifactStore.build_catalog()` shape:
+
+- `catalog_version`
+- `field_sources`
+- `artifacts[]` with `artifact_ref`, `artifact_kind`, `relative_path`, and `native_primary_id`
+
+If you add new artifact-mode samples, update the raw JSON artifact files first and then regenerate
+`index.json` from the catalog contract instead of hand-authoring derived overview/metrics/replay lists.
 
 ## Route Surface
 

@@ -39,6 +39,7 @@
 - `pyproject.toml`
 - `alpha_sre/`
 - `tests/`
+- `frontend/`
 - `docs/superpowers/`
 
 ## Experimental documents

@@ -20,6 +20,14 @@ def _normalize(value: Any) -> Any:
 T = TypeVar("T")
 
 
+def _require_exact_version(data: dict[str, Any], field: str, expected: str, artifact_name: str) -> None:
+    actual = data.get(field)
+    if actual != expected:
+        raise ValueError(
+            f"{artifact_name} {field} is unsupported: expected {expected}, got {actual!r}"
+        )
+
+
 def to_jsonable(value: T) -> T:
     return _normalize(value)
 
@@ -303,7 +311,9 @@ def incident_action_item_from_dict(data: dict[str, Any]):
 
 
 def incident_report_from_dict(data: dict[str, Any]):
-    from .incident import IncidentReport
+    from .incident import INCIDENT_REPORT_VERSION, IncidentReport
+
+    _require_exact_version(data, "artifact_version", INCIDENT_REPORT_VERSION, "incident report")
 
     return IncidentReport(
         incident_id=data["incident_id"],
@@ -352,12 +362,19 @@ def incident_report_from_dict(data: dict[str, Any]):
         pass_criteria_for_closure=data.get("pass_criteria_for_closure", ""),
         evidence_references=tuple(data.get("evidence_references", ())),
         action_items=tuple(incident_action_item_from_dict(item) for item in data.get("action_items", ())),
-        artifact_version=data.get("artifact_version", "1.0"),
+        artifact_version=data["artifact_version"],
     )
 
 
 def release_attempt_record_from_dict(data: dict[str, Any]):
-    from .integration import ReleaseAttemptRecord
+    from .integration import RELEASE_ATTEMPT_CONTRACT_VERSION, ReleaseAttemptRecord
+
+    _require_exact_version(
+        data,
+        "contract_version",
+        RELEASE_ATTEMPT_CONTRACT_VERSION,
+        "release attempt record",
+    )
 
     return ReleaseAttemptRecord(
         attempt_id=data["attempt_id"],
@@ -373,12 +390,19 @@ def release_attempt_record_from_dict(data: dict[str, Any]):
         rollback_reason=data.get("rollback_reason", ""),
         incident_id=data.get("incident_id"),
         derived_from_attempt_id=data.get("derived_from_attempt_id"),
-        contract_version=data.get("contract_version", "1.0"),
+        contract_version=data["contract_version"],
     )
 
 
 def narrative_quality_review_record_from_dict(data: dict[str, Any]):
-    from .review import NarrativeQualityReviewRecord
+    from .review import NARRATIVE_QUALITY_REVIEW_CONTRACT_VERSION, NarrativeQualityReviewRecord
+
+    _require_exact_version(
+        data,
+        "contract_version",
+        NARRATIVE_QUALITY_REVIEW_CONTRACT_VERSION,
+        "quality review record",
+    )
 
     return NarrativeQualityReviewRecord(
         review_id=data["review_id"],
@@ -390,7 +414,7 @@ def narrative_quality_review_record_from_dict(data: dict[str, Any]):
         introduced_setup_item_count=int(data.get("introduced_setup_item_count", 0)),
         resolved_setup_item_count=int(data.get("resolved_setup_item_count", 0)),
         evidence_references=tuple(data.get("evidence_references", ())),
-        contract_version=data.get("contract_version", "1.0"),
+        contract_version=data["contract_version"],
     )
 
 

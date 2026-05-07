@@ -7,8 +7,8 @@ from typing import Tuple
 
 from .events import Command, Event
 from .gate import GateResult
-from .incident import IncidentReport
-from .integration import ReleaseAttemptRecord, ReplayDriftReport
+from .incident import INCIDENT_REPORT_VERSION, IncidentReport
+from .integration import RELEASE_ATTEMPT_CONTRACT_VERSION, ReleaseAttemptRecord, ReplayDriftReport
 from .metrics import MetricSummary
 from .replay import ReplayResult, ReplaySession
 from .serialization import (
@@ -24,11 +24,32 @@ from .serialization import (
     snapshot_from_dict,
     to_jsonable,
 )
-from .review import NarrativeQualityReviewRecord
+from .review import NARRATIVE_QUALITY_REVIEW_CONTRACT_VERSION, NarrativeQualityReviewRecord
 from .state import NarrativeSnapshot
 
 
 ARTIFACT_BUNDLE_VERSION = "1.0"
+ARTIFACT_CATALOG_VERSION = "1.0"
+ARTIFACT_FIELD_SOURCES = {
+    "artifact_ref": "catalog_metadata",
+    "artifact_kind": "catalog_metadata",
+    "relative_path": "catalog_metadata",
+    "native_primary_id": "native_artifact",
+}
+
+
+def _require_exact_version(data: dict, field: str, expected: str, artifact_name: str) -> None:
+    actual = data.get(field)
+    if actual != expected:
+        raise ValueError(
+            f"{artifact_name} {field} is unsupported: expected {expected}, got {actual!r}"
+        )
+
+
+def _require_catalog_primary_id(value: object, field: str, artifact_name: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{artifact_name} {field} is required for catalog generation")
+    return value
 
 
 @dataclass(frozen=True)
@@ -50,6 +71,7 @@ class ReplayBundle:
     def from_dict(cls, data: dict) -> "ReplayBundle":
         from .integration import ReplayDriftReport
 
+        _require_exact_version(data, "bundle_version", ARTIFACT_BUNDLE_VERSION, "replay bundle")
         drift = data.get("drift_report", {})
         return cls(
             command=command_from_dict(data["command"]),
@@ -65,7 +87,7 @@ class ReplayBundle:
                 replay_signature=dict(drift.get("replay_signature", {})),
             ),
             session=replay_session_from_dict(data["session"]) if data.get("session") is not None else None,
-            bundle_version=data.get("bundle_version", ARTIFACT_BUNDLE_VERSION),
+            bundle_version=data["bundle_version"],
         )
 
 
@@ -121,3 +143,100 @@ class JsonArtifactStore:
     def load_quality_review_record(self, relative_path: str) -> NarrativeQualityReviewRecord:
         target = self._resolve(relative_path)
         return narrative_quality_review_record_from_dict(json.loads(target.read_text(encoding="utf-8")))
+
+    def build_catalog(self) -> dict:
+        artifacts = []
+
+        for target in sorted(self.base_dir.rglob("*.json")):
+            if target.name == "index.json":
+                continue
+
+            relative_path = target.relative_to(self.base_dir).as_posix()
+            parts = Path(relative_path).parts
+            if not parts:
+                continue
+
+            bucket = parts[0]
+            if bucket == "bundles":
+                data = json.loads(target.read_text(encoding="utf-8"))
+                _require_exact_version(data, "bundle_version", ARTIFACT_BUNDLE_VERSION, "replay bundle")
+                command = data.get("command", {})
+                artifacts.append(
+                    {
+                        "artifact_ref": f"bundle:{Path(relative_path).stem}",
+                        "artifact_kind": "replay_bundle",
+                        "relative_path": relative_path,
+                        "native_primary_id": _require_catalog_primary_id(
+                            command.get("command_id"),
+                            "command.command_id",
+                            "replay bundle",
+                        ),
+                    }
+                )
+                continue
+
+            if bucket == "incidents":
+                data = json.loads(target.read_text(encoding="utf-8"))
+                _require_exact_version(data, "artifact_version", INCIDENT_REPORT_VERSION, "incident report")
+                artifacts.append(
+                    {
+                        "artifact_ref": f"incident:{_require_catalog_primary_id(data.get('incident_id'), 'incident_id', 'incident report')}",
+                        "artifact_kind": "incident_report",
+                        "relative_path": relative_path,
+                        "native_primary_id": _require_catalog_primary_id(
+                            data.get("incident_id"),
+                            "incident_id",
+                            "incident report",
+                        ),
+                    }
+                )
+                continue
+
+            if bucket == "releases":
+                data = json.loads(target.read_text(encoding="utf-8"))
+                _require_exact_version(
+                    data,
+                    "contract_version",
+                    RELEASE_ATTEMPT_CONTRACT_VERSION,
+                    "release attempt record",
+                )
+                artifacts.append(
+                    {
+                        "artifact_ref": f"release:{_require_catalog_primary_id(data.get('attempt_id'), 'attempt_id', 'release attempt record')}",
+                        "artifact_kind": "release_attempt_record",
+                        "relative_path": relative_path,
+                        "native_primary_id": _require_catalog_primary_id(
+                            data.get("attempt_id"),
+                            "attempt_id",
+                            "release attempt record",
+                        ),
+                    }
+                )
+                continue
+
+            if bucket == "reviews":
+                data = json.loads(target.read_text(encoding="utf-8"))
+                _require_exact_version(
+                    data,
+                    "contract_version",
+                    NARRATIVE_QUALITY_REVIEW_CONTRACT_VERSION,
+                    "quality review record",
+                )
+                artifacts.append(
+                    {
+                        "artifact_ref": f"review:{_require_catalog_primary_id(data.get('review_id'), 'review_id', 'quality review record')}",
+                        "artifact_kind": "quality_review_record",
+                        "relative_path": relative_path,
+                        "native_primary_id": _require_catalog_primary_id(
+                            data.get("review_id"),
+                            "review_id",
+                            "quality review record",
+                        ),
+                    }
+                )
+
+        return {
+            "catalog_version": ARTIFACT_CATALOG_VERSION,
+            "field_sources": dict(ARTIFACT_FIELD_SOURCES),
+            "artifacts": artifacts,
+        }

@@ -112,6 +112,25 @@ export interface ArtifactDetail extends ArtifactSummary {
   raw: JsonValue | null
 }
 
+export interface ArtifactCatalogEntry {
+  ref?: string
+  artifact_ref?: string
+  kind?: ArtifactKind
+  artifact_kind?: ArtifactKind
+  title?: string
+  display_title?: string
+  description?: string
+  updatedAt?: string
+  catalog_time?: string
+  path?: string
+  relative_path?: string
+  tags?: string[]
+  sections?: SectionInfo[]
+  links?: RelatedRefs
+  nativePrimaryId?: string
+  native_primary_id?: string
+}
+
 export interface SnapshotDetail {
   ref: string
   snapshotId: string
@@ -289,15 +308,17 @@ export interface OverviewSummary {
 }
 
 export interface FrontendArtifactIndex {
-  generatedAt: string
-  overview: OverviewSummary
-  metrics: MetricDetail
-  artifacts: ArtifactSummary[]
-  snapshots: SnapshotDetail[]
-  replays: ReplayBundleDetail[]
-  validations: ValidationDetail[]
-  gates: GateDetail[]
-  reviews: ReviewDetail[]
-  incidents: IncidentDetail[]
-  releases: ReleaseAttemptDetail[]
+  generatedAt?: string
+  catalog_version?: string
+  field_sources?: Record<string, string>
+  overview?: OverviewSummary
+  metrics?: MetricDetail
+  artifacts: ArtifactCatalogEntry[]
+  snapshots?: SnapshotDetail[]
+  replays?: ReplayBundleDetail[]
+  validations?: ValidationDetail[]
+  gates?: GateDetail[]
+  reviews?: ReviewDetail[]
+  incidents?: IncidentDetail[]
+  releases?: ReleaseAttemptDetail[]
 }

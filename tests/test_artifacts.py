@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -484,6 +485,196 @@ class ArtifactStoreTests(unittest.TestCase):
         self.assertEqual(loaded.checked_segment_count, 4)
         self.assertEqual(loaded.world_rule_violation_count, 1)
         self.assertEqual(loaded.resolved_setup_item_count, 2)
+
+    def test_store_rejects_missing_or_unsupported_artifact_versions(self):
+        bridge = IntegrationBridge()
+        snapshot = make_snapshot()
+        command = Command("cmd1", "edit", "op1", "chapter-1", "p1", "2026-05-06T00:00:00Z")
+        request = WriteBackRequest(
+            command=command,
+            snapshot=snapshot,
+            events=(Event("e1", "cmd1", "chapter_outcome", 1, "2026-05-06T00:00:01Z", "1", {}),),
+            source_system="alpha-autopilot",
+            actor="editor-1",
+            expected_policy_version="p1",
+            expected_visibility_version="v1",
+            expected_schema_version="1.0",
+        )
+        write_back_result = bridge.write_back(request)
+        bundle = ReplayBundle(
+            command=command,
+            snapshot=snapshot,
+            events=request.events,
+            replay=write_back_result.replay,
+            gate=write_back_result.gate,
+            metrics=write_back_result.metrics,
+            drift_report=write_back_result.drift_report,
+        )
+        incident_report = IncidentReport.from_replay_bundle(
+            incident_id="inc-versioned",
+            title="artifact version compatibility",
+            severity="medium",
+            status="open",
+            date_opened="2026-05-06",
+            incident_owner="editor-1",
+            replay_bundle_reference="replays/inc-versioned.json",
+            bundle=bundle,
+        )
+        release_attempt = bridge.build_release_attempt_record(
+            request,
+            write_back_result,
+            attempt_id="rel-versioned",
+        )
+        quality_review = NarrativeQualityReviewRecord(
+            review_id="review-versioned",
+            source_artifact_reference="reviews/review-versioned.json",
+            checked_segment_count=1,
+            checked_scene_count=1,
+        )
+
+        cases = (
+            ("bundle_version", "replays/versioned-bundle.json", lambda store, path: store.save_bundle(path, bundle), lambda store, path: store.load_bundle(path)),
+            ("artifact_version", "incidents/versioned-incident.json", lambda store, path: store.save_incident_report(path, incident_report), lambda store, path: store.load_incident_report(path)),
+            ("contract_version", "releases/versioned-release.json", lambda store, path: store.save_release_attempt_record(path, release_attempt), lambda store, path: store.load_release_attempt_record(path)),
+            ("contract_version", "reviews/versioned-review.json", lambda store, path: store.save_quality_review_record(path, quality_review), lambda store, path: store.load_quality_review_record(path)),
+        )
+
+        with tempfile.TemporaryDirectory(dir="D:/tmp") as tmp:
+            store = JsonArtifactStore(Path(tmp))
+            for version_field, relative_path, save, load in cases:
+                save(store, relative_path)
+                artifact_path = Path(tmp) / relative_path
+                original_payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+
+                with self.subTest(relative_path=relative_path, mode="missing"):
+                    missing_version = dict(original_payload)
+                    missing_version.pop(version_field, None)
+                    artifact_path.write_text(json.dumps(missing_version), encoding="utf-8")
+                    with self.assertRaises(ValueError):
+                        load(store, relative_path)
+
+                with self.subTest(relative_path=relative_path, mode="unsupported"):
+                    unsupported_version = dict(original_payload)
+                    unsupported_version[version_field] = "9.9"
+                    artifact_path.write_text(json.dumps(unsupported_version), encoding="utf-8")
+                    with self.assertRaises(ValueError):
+                        load(store, relative_path)
+
+                artifact_path.write_text(json.dumps(original_payload), encoding="utf-8")
+
+    def test_catalog_generation_tracks_repo_native_artifacts(self):
+        bridge = IntegrationBridge()
+        snapshot = make_snapshot()
+        command = Command("cmd1", "edit", "op1", "chapter-1", "p1", "2026-05-06T00:00:00Z")
+        request = WriteBackRequest(
+            command=command,
+            snapshot=snapshot,
+            events=(Event("e1", "cmd1", "chapter_outcome", 1, "2026-05-06T00:00:01Z", "1", {}),),
+            source_system="alpha-autopilot",
+            actor="editor-1",
+            expected_policy_version="p1",
+            expected_visibility_version="v1",
+            expected_schema_version="1.0",
+        )
+        write_back_result = bridge.write_back(request)
+        bundle = ReplayBundle(
+            command=command,
+            snapshot=snapshot,
+            events=request.events,
+            replay=write_back_result.replay,
+            gate=write_back_result.gate,
+            metrics=write_back_result.metrics,
+            drift_report=write_back_result.drift_report,
+        )
+        incident_report = IncidentReport.from_replay_bundle(
+            incident_id="inc-catalog",
+            title="catalog incident",
+            severity="medium",
+            status="open",
+            date_opened="2026-05-06",
+            incident_owner="editor-1",
+            replay_bundle_reference="bundles/catalog-bundle.json",
+            bundle=bundle,
+        )
+        release_attempt = bridge.build_release_attempt_record(
+            request,
+            write_back_result,
+            attempt_id="rel-catalog",
+        )
+        quality_review = NarrativeQualityReviewRecord(
+            review_id="review-catalog",
+            source_artifact_reference="bundle:catalog-bundle",
+            checked_segment_count=1,
+            checked_scene_count=1,
+            evidence_references=("event:e1",),
+        )
+
+        with tempfile.TemporaryDirectory(dir="D:/tmp") as tmp:
+            store = JsonArtifactStore(Path(tmp))
+            store.save_bundle("bundles/catalog-bundle.json", bundle)
+            store.save_incident_report("incidents/inc-catalog.json", incident_report)
+            store.save_release_attempt_record("releases/rel-catalog.json", release_attempt)
+            store.save_quality_review_record("reviews/review-catalog.json", quality_review)
+
+            catalog = store.build_catalog()
+
+        self.assertEqual(catalog["catalog_version"], "1.0")
+        self.assertEqual(len(catalog["artifacts"]), 4)
+        entries = {entry["artifact_ref"]: entry for entry in catalog["artifacts"]}
+        self.assertEqual(entries["bundle:catalog-bundle"]["artifact_kind"], "replay_bundle")
+        self.assertEqual(entries["bundle:catalog-bundle"]["relative_path"], "bundles/catalog-bundle.json")
+        self.assertEqual(entries["bundle:catalog-bundle"]["native_primary_id"], "cmd1")
+        self.assertEqual(entries["incident:inc-catalog"]["native_primary_id"], "inc-catalog")
+        self.assertEqual(entries["release:rel-catalog"]["native_primary_id"], "rel-catalog")
+        self.assertEqual(entries["review:review-catalog"]["native_primary_id"], "review-catalog")
+        self.assertEqual(
+            catalog["field_sources"],
+            {
+                "artifact_ref": "catalog_metadata",
+                "artifact_kind": "catalog_metadata",
+                "relative_path": "catalog_metadata",
+                "native_primary_id": "native_artifact",
+            },
+        )
+
+    def test_catalog_generation_accepts_catalog_minimal_artifact_records(self):
+        minimal_bundle = {
+            "bundle_version": "1.0",
+            "command": {
+                "command_id": "cmd-min",
+            },
+        }
+        minimal_incident = {
+            "artifact_version": "1.0",
+            "incident_id": "inc-min",
+        }
+        minimal_release = {
+            "contract_version": "1.0",
+            "attempt_id": "rel-min",
+        }
+        minimal_review = {
+            "contract_version": "1.0",
+            "review_id": "review-min",
+        }
+
+        with tempfile.TemporaryDirectory(dir="D:/tmp") as tmp:
+            root = Path(tmp)
+            (root / "bundles").mkdir()
+            (root / "incidents").mkdir()
+            (root / "releases").mkdir()
+            (root / "reviews").mkdir()
+            (root / "bundles" / "minimal.json").write_text(json.dumps(minimal_bundle), encoding="utf-8")
+            (root / "incidents" / "minimal.json").write_text(json.dumps(minimal_incident), encoding="utf-8")
+            (root / "releases" / "minimal.json").write_text(json.dumps(minimal_release), encoding="utf-8")
+            (root / "reviews" / "minimal.json").write_text(json.dumps(minimal_review), encoding="utf-8")
+
+            catalog = JsonArtifactStore(root).build_catalog()
+
+        entries = {entry["artifact_ref"]: entry for entry in catalog["artifacts"]}
+        self.assertEqual(entries["bundle:minimal"]["native_primary_id"], "cmd-min")
+        self.assertEqual(entries["incident:inc-min"]["native_primary_id"], "inc-min")
+        self.assertEqual(entries["release:rel-min"]["native_primary_id"], "rel-min")
+        self.assertEqual(entries["review:review-min"]["native_primary_id"], "review-min")
 
 
 if __name__ == "__main__":

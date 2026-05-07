@@ -68,6 +68,19 @@ def frame(**overrides) -> ObservationFrame:
 
 
 class ReplaySemanticTests(unittest.TestCase):
+    def test_failed_replay_result_keeps_frozen_snapshot_evidence(self):
+        snapshot = base_snapshot()
+        result = ReplayEngine().replay(command(), snapshot, [])
+
+        self.assertFalse(result.ok)
+        self.assertEqual(result.state.characters["c1"].current_goal, "find truth")
+
+        snapshot.characters["c1"] = CharacterState(
+            **{**snapshot.characters["c1"].__dict__, "current_goal": "mutated after replay"}
+        )
+
+        self.assertEqual(result.state.characters["c1"].current_goal, "find truth")
+
     def test_locked_post_state_mismatch_reports_structured_diff(self):
         pre = base_snapshot()
         post = base_snapshot(

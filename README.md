@@ -90,6 +90,12 @@ These gaps are the starting point for V2.
 - `codex-review/V2/V2.2-pr-requirements.md`: current V2.2 PR requirement document
 - `codex-review/v2-pr-requirements-narrative-kernel.md`: V2 background only
 
+### Frontend workspace
+
+- `frontend/`: V3.3 React SPA for artifact-first / mock-first control-plane browsing
+- `frontend/public/artifacts/`: artifact-mode catalog (`CAT`) plus sample replay / incident / release / review records
+- `frontend/src/mocks/`: mock-mode catalog and MSW handlers
+
 ## How this differs from traditional SRE
 
 Traditional SRE usually treats the system of interest as a service made of requests, infrastructure, logs, metrics, traces, deploys, and error budgets.
@@ -155,6 +161,15 @@ In plain terms, the current contract is about stabilizing:
 
 ```powershell
 pytest -q
+```
+
+### Run the frontend
+
+```powershell
+cd frontend
+npm install
+npm run test
+npm run build
 ```
 
 ### Read the repo in the intended order
