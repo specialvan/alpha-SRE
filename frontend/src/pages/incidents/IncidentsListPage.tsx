@@ -10,12 +10,14 @@ import { PaginationControls } from '../../components/PaginationControls'
 import { StateBadge } from '../../components/StateBadge'
 import { StatusNotice } from '../../components/StatusNotice'
 import { useSreProvider } from '../../app/providers'
+import { useUiStore } from '../../app/store'
 import { describeDataError } from '../../data/errors'
 import { enabledCapabilityLabels } from '../../data/list-capabilities'
-import type { SortDirection } from '../../data/types'
+import type { DataMode, SortDirection } from '../../data/types'
 
 export function IncidentsListPage() {
   const provider = useSreProvider()
+  const dataMode = useUiStore((state) => state.dataMode)
   const [search, setSearch] = useState('')
   const [severity, setSeverity] = useState('')
   const [status, setStatus] = useState('')
@@ -26,6 +28,7 @@ export function IncidentsListPage() {
 
   const incidents = useQuery({
     queryKey: [
+      dataMode,
       'incidents',
       search,
       severity,
@@ -35,7 +38,6 @@ export function IncidentsListPage() {
       pageSize,
       page,
     ],
-    placeholderData: (previous) => previous,
     queryFn: () =>
       provider.listIncidents({
         search,
@@ -47,16 +49,16 @@ export function IncidentsListPage() {
         pageSize,
       }),
   })
-  const lastDataRef = useRef<typeof incidents.data>(undefined)
+  const lastDataRef = useRef<Partial<Record<DataMode, typeof incidents.data>>>({})
   const errorState = incidents.isError
     ? describeDataError(incidents.error, 'Incidents unavailable.')
     : null
 
   if (incidents.data) {
-    lastDataRef.current = incidents.data
+    lastDataRef.current[dataMode] = incidents.data
   }
 
-  const data = incidents.data ?? lastDataRef.current
+  const data = incidents.data ?? lastDataRef.current[dataMode]
 
   if (incidents.isLoading && !data) {
     return <LoadingSkeleton label="Loading incidents..." />

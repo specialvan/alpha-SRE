@@ -18,13 +18,13 @@ describe('release routes', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('link', { name: /releases/i }))
+    await user.click(screen.getByRole('link', { name: /发布/i }))
 
     expect(await screen.findByRole('heading', { name: /releases/i })).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: /release status/i })).toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: /page size/i })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: /每页数量/i })).toBeInTheDocument()
 
-    await user.type(screen.getByLabelText(/^Search$/i), 'missing-release')
+    await user.type(screen.getByLabelText(/^搜索$/i), 'missing-release')
 
     await waitFor(() => {
       expect(screen.getByText(/no release attempts match the current query/i)).toBeInTheDocument()
@@ -35,15 +35,15 @@ describe('release routes', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getAllByRole('link', { name: /releases/i })[0])
+    await user.click(screen.getByRole('link', { name: /发布/i }))
     await user.click(await screen.findByRole('link', { name: /rel-post-state/i }))
 
     expect(
       await screen.findByRole('heading', { name: /rel-post-state/i }),
     ).toBeInTheDocument()
-    expect(screen.getByText(/alpha-autopilot/i)).toBeInTheDocument()
-    expect(screen.getByText(/operator-1/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /copy triggering command id/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /复制triggering command id/i })).toBeInTheDocument()
+    expect(screen.getByText(/2026-05-07T16:25:00Z/i)).toBeInTheDocument()
+    expect(screen.getByText(/^blocked$/i)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /locked snapshot/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /gate result/i })).toHaveAttribute(
       'href',

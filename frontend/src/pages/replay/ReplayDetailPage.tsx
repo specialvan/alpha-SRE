@@ -30,16 +30,17 @@ function buildValidationHref(replayRef: string, failureClass?: string) {
 
 export function ReplayDetailPage() {
   const provider = useSreProvider()
+  const dataMode = useUiStore((state) => state.dataMode)
   const role = useUiStore((state) => state.role)
   const params = useParams()
   const ref = decodeURIComponent(params.replayRef ?? '')
   const replay = useQuery({
-    queryKey: ['replay', ref],
+    queryKey: [dataMode, 'replay', ref],
     queryFn: () => provider.getReplayBundle(ref),
     enabled: Boolean(ref),
   })
   const validation = useQuery({
-    queryKey: ['validation', ref],
+    queryKey: [dataMode, 'validation', ref],
     queryFn: () => provider.getValidationForReplay(ref),
     enabled: Boolean(ref),
   })

@@ -10,14 +10,16 @@ import { MetricSparkline } from '../../components/MetricSparkline'
 import { StateBadge } from '../../components/StateBadge'
 import { StatusNotice } from '../../components/StatusNotice'
 import { useSreProvider } from '../../app/providers'
+import { useUiStore } from '../../app/store'
 import { describeDataError } from '../../data/errors'
 
 export function MetricsPage() {
   const provider = useSreProvider()
+  const dataMode = useUiStore((state) => state.dataMode)
   const [searchParams] = useSearchParams()
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d' | 'all'>('7d')
   const metrics = useQuery({
-    queryKey: ['metrics', timeRange],
+    queryKey: [dataMode, 'metrics', timeRange],
     queryFn: () => provider.getMetrics({ timeRange }),
   })
   const metricsError = metrics.isError
@@ -27,7 +29,7 @@ export function MetricsPage() {
   const primaryGateRef =
     requestedGateRef || metrics.data?.gateRefs[0] || 'gate:bundle:post-state-mismatch'
   const gate = useQuery({
-    queryKey: ['gate', primaryGateRef],
+    queryKey: [dataMode, 'gate', primaryGateRef],
     queryFn: () => provider.getGateResult(primaryGateRef),
     enabled: Boolean(primaryGateRef),
   })

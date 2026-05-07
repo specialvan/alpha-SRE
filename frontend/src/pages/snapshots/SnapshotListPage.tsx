@@ -9,12 +9,14 @@ import { LoadingSkeleton } from '../../components/LoadingSkeleton'
 import { PaginationControls } from '../../components/PaginationControls'
 import { StatusNotice } from '../../components/StatusNotice'
 import { useSreProvider } from '../../app/providers'
+import { useUiStore } from '../../app/store'
 import { describeDataError } from '../../data/errors'
 import { enabledCapabilityLabels } from '../../data/list-capabilities'
-import type { SortDirection } from '../../data/types'
+import type { DataMode, SortDirection } from '../../data/types'
 
 export function SnapshotListPage() {
   const provider = useSreProvider()
+  const dataMode = useUiStore((state) => state.dataMode)
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('createdAt')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
@@ -22,8 +24,7 @@ export function SnapshotListPage() {
   const [page, setPage] = useState(1)
 
   const snapshots = useQuery({
-    queryKey: ['snapshots', search, sortBy, sortDirection, pageSize, page],
-    placeholderData: (previous) => previous,
+    queryKey: [dataMode, 'snapshots', search, sortBy, sortDirection, pageSize, page],
     queryFn: () =>
       provider.listSnapshots({
         search,
@@ -33,25 +34,25 @@ export function SnapshotListPage() {
         pageSize,
       }),
   })
-  const lastDataRef = useRef<typeof snapshots.data>(undefined)
+  const lastDataRef = useRef<Partial<Record<DataMode, typeof snapshots.data>>>({})
   const errorState = snapshots.isError
-    ? describeDataError(snapshots.error, 'Snapshots unavailable.')
+    ? describeDataError(snapshots.error, '快照列表不可用。')
     : null
 
   if (snapshots.data) {
-    lastDataRef.current = snapshots.data
+    lastDataRef.current[dataMode] = snapshots.data
   }
 
-  const data = snapshots.data ?? lastDataRef.current
+  const data = snapshots.data ?? lastDataRef.current[dataMode]
 
   if (snapshots.isLoading && !data) {
-    return <LoadingSkeleton label="Loading snapshots..." />
+    return <LoadingSkeleton label="正在加载快照..." />
   }
 
   if (snapshots.isError && !data) {
     return (
       <EmptyState
-        title={errorState?.title ?? 'Snapshots unavailable.'}
+        title={errorState?.title ?? '快照列表不可用。'}
         description={errorState?.description}
       />
     )
@@ -60,8 +61,8 @@ export function SnapshotListPage() {
   if (!data) {
     return (
       <EmptyState
-        title="Snapshots unavailable."
-        description="No snapshot list payload was returned."
+        title="快照列表不可用。"
+        description="未返回快照列表数据。"
       />
     )
   }
@@ -70,14 +71,14 @@ export function SnapshotListPage() {
     <section className="page-shell">
       <header className="page-header">
         <div>
-          <p className="eyebrow">Snapshot Viewer</p>
-          <h2>Snapshots</h2>
-          <p>View frozen narrative state, then pivot into the replay, validation, or incident chain.</p>
+          <p className="eyebrow">快照查看</p>
+          <h2>快照</h2>
+          <p>查看冻结的叙事状态，并继续进入回放、校验或事件链路。</p>
         </div>
       </header>
       {snapshots.isError ? (
         <StatusNotice
-          title="Showing cached snapshots."
+          title="正在显示缓存的快照。"
           description={errorState?.description}
           tone="warning"
         />
@@ -94,9 +95,9 @@ export function SnapshotListPage() {
           setPage(1)
         }}
         sortOptions={[
-          { value: 'createdAt', label: 'Created at' },
-          { value: 'title', label: 'Title' },
-          { value: 'stateIdentity', label: 'State identity' },
+          { value: 'createdAt', label: '创建时间' },
+          { value: 'title', label: '标题' },
+          { value: 'stateIdentity', label: '状态标识' },
         ]}
         sortDirection={sortDirection}
         onSortDirectionChange={(value) => {
@@ -113,8 +114,8 @@ export function SnapshotListPage() {
       />
       {data.items.length === 0 ? (
         <EmptyState
-          title="No snapshots match the current query."
-          description="Try a different search term or sort order."
+          title="当前查询没有匹配的快照。"
+          description="请调整搜索词或排序方式。"
         />
       ) : (
         <>
@@ -133,12 +134,12 @@ export function SnapshotListPage() {
                 <div className="link-row">
                   {snapshot.links.replayRef ? (
                     <Link className="card-link" to={`/replay/${snapshot.links.replayRef}`}>
-                      Related Replay
+                      关联回放
                     </Link>
                   ) : null}
                   {snapshot.links.artifactRef ? (
                     <Link className="card-link" to={`/artifacts/${snapshot.links.artifactRef}`}>
-                      Source Artifact
+                      来源制品
                     </Link>
                   ) : null}
                 </div>

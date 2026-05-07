@@ -10,12 +10,14 @@ import { PaginationControls } from '../../components/PaginationControls'
 import { StateBadge } from '../../components/StateBadge'
 import { StatusNotice } from '../../components/StatusNotice'
 import { useSreProvider } from '../../app/providers'
+import { useUiStore } from '../../app/store'
 import { describeDataError } from '../../data/errors'
 import { enabledCapabilityLabels } from '../../data/list-capabilities'
-import type { SortDirection } from '../../data/types'
+import type { DataMode, SortDirection } from '../../data/types'
 
 export function ReleasesListPage() {
   const provider = useSreProvider()
+  const dataMode = useUiStore((state) => state.dataMode)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const [sortBy, setSortBy] = useState('updatedAt')
@@ -24,8 +26,7 @@ export function ReleasesListPage() {
   const [page, setPage] = useState(1)
 
   const releases = useQuery({
-    queryKey: ['releases', search, status, sortBy, sortDirection, pageSize, page],
-    placeholderData: (previous) => previous,
+    queryKey: [dataMode, 'releases', search, status, sortBy, sortDirection, pageSize, page],
     queryFn: () =>
       provider.listReleaseAttempts({
         search,
@@ -36,16 +37,16 @@ export function ReleasesListPage() {
         pageSize,
       }),
   })
-  const lastDataRef = useRef<typeof releases.data>(undefined)
+  const lastDataRef = useRef<Partial<Record<DataMode, typeof releases.data>>>({})
   const errorState = releases.isError
     ? describeDataError(releases.error, 'Release attempts unavailable.')
     : null
 
   if (releases.data) {
-    lastDataRef.current = releases.data
+    lastDataRef.current[dataMode] = releases.data
   }
 
-  const data = releases.data ?? lastDataRef.current
+  const data = releases.data ?? lastDataRef.current[dataMode]
 
   if (releases.isLoading && !data) {
     return <LoadingSkeleton label="Loading release attempts..." />

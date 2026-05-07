@@ -9,12 +9,14 @@ import { LoadingSkeleton } from '../../components/LoadingSkeleton'
 import { PaginationControls } from '../../components/PaginationControls'
 import { StatusNotice } from '../../components/StatusNotice'
 import { useSreProvider } from '../../app/providers'
+import { useUiStore } from '../../app/store'
 import { describeDataError } from '../../data/errors'
 import { enabledCapabilityLabels } from '../../data/list-capabilities'
-import type { SortDirection } from '../../data/types'
+import type { DataMode, SortDirection } from '../../data/types'
 
 export function ReviewsListPage() {
   const provider = useSreProvider()
+  const dataMode = useUiStore((state) => state.dataMode)
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('updatedAt')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
@@ -22,8 +24,7 @@ export function ReviewsListPage() {
   const [page, setPage] = useState(1)
 
   const reviews = useQuery({
-    queryKey: ['reviews', search, sortBy, sortDirection, pageSize, page],
-    placeholderData: (previous) => previous,
+    queryKey: [dataMode, 'reviews', search, sortBy, sortDirection, pageSize, page],
     queryFn: () =>
       provider.listReviews({
         search,
@@ -33,16 +34,16 @@ export function ReviewsListPage() {
         pageSize,
       }),
   })
-  const lastDataRef = useRef<typeof reviews.data>(undefined)
+  const lastDataRef = useRef<Partial<Record<DataMode, typeof reviews.data>>>({})
   const errorState = reviews.isError
     ? describeDataError(reviews.error, 'Quality reviews unavailable.')
     : null
 
   if (reviews.data) {
-    lastDataRef.current = reviews.data
+    lastDataRef.current[dataMode] = reviews.data
   }
 
-  const data = reviews.data ?? lastDataRef.current
+  const data = reviews.data ?? lastDataRef.current[dataMode]
 
   if (reviews.isLoading && !data) {
     return <LoadingSkeleton label="Loading quality reviews..." />

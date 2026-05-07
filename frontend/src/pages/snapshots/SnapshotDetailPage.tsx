@@ -8,6 +8,7 @@ import { LoadingSkeleton } from '../../components/LoadingSkeleton'
 import { SectionAccordion } from '../../components/SectionAccordion'
 import { StatusNotice } from '../../components/StatusNotice'
 import { useSreProvider } from '../../app/providers'
+import { useUiStore } from '../../app/store'
 import { describeDataError } from '../../data/errors'
 import type { JsonValue } from '../../data/types'
 
@@ -27,10 +28,11 @@ const snapshotSections = [
 
 export function SnapshotDetailPage() {
   const provider = useSreProvider()
+  const dataMode = useUiStore((state) => state.dataMode)
   const params = useParams()
   const ref = decodeURIComponent(params.snapshotRef ?? '')
   const snapshot = useQuery({
-    queryKey: ['snapshot', ref],
+    queryKey: [dataMode, 'snapshot', ref],
     queryFn: () => provider.getSnapshot(ref),
     enabled: Boolean(ref),
   })

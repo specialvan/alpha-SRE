@@ -15,11 +15,12 @@ import { describeDataError } from '../../data/errors'
 
 export function IncidentDetailPage() {
   const provider = useSreProvider()
+  const dataMode = useUiStore((state) => state.dataMode)
   const role = useUiStore((state) => state.role)
   const params = useParams()
   const ref = decodeURIComponent(params.incidentRef ?? '')
   const incident = useQuery({
-    queryKey: ['incident', ref],
+    queryKey: [dataMode, 'incident', ref],
     queryFn: () => provider.getIncident(ref),
     enabled: Boolean(ref),
   })

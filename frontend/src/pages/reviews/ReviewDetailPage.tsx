@@ -8,14 +8,16 @@ import { JsonTreeViewer } from '../../components/JsonTreeViewer'
 import { LoadingSkeleton } from '../../components/LoadingSkeleton'
 import { StatusNotice } from '../../components/StatusNotice'
 import { useSreProvider } from '../../app/providers'
+import { useUiStore } from '../../app/store'
 import { describeDataError } from '../../data/errors'
 
 export function ReviewDetailPage() {
   const provider = useSreProvider()
+  const dataMode = useUiStore((state) => state.dataMode)
   const params = useParams()
   const ref = decodeURIComponent(params.reviewRef ?? '')
   const review = useQuery({
-    queryKey: ['review', ref],
+    queryKey: [dataMode, 'review', ref],
     queryFn: () => provider.getReview(ref),
     enabled: Boolean(ref),
   })

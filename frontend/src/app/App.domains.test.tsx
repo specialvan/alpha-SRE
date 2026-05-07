@@ -13,18 +13,16 @@ describe('core domain routes', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('link', { name: /artifacts/i }))
+    await user.click(screen.getByRole('link', { name: /制品/i }))
     expect(await screen.findByText(/locked post-state mismatch/i)).toBeInTheDocument()
 
-    await user.click(screen.getByRole('link', { name: /snapshots/i }))
+    await user.click(screen.getByRole('link', { name: /快照/i }))
     expect(await screen.findByText(/snapshot s-v2-pre/i)).toBeInTheDocument()
 
-    await user.click(screen.getByRole('link', { name: /replay lab/i }))
-    expect(
-      await screen.findByText(/replay bundle: post-state mismatch/i),
-    ).toBeInTheDocument()
+    await user.click(screen.getByRole('link', { name: /回放实验室/i }))
+    expect(await screen.findByText(/locked post-state mismatch/i)).toBeInTheDocument()
 
-    await user.click(screen.getByRole('link', { name: /validation/i }))
+    await user.click(screen.getByRole('link', { name: /校验中心/i }))
     expect(
       await screen.findByRole('heading', {
         name: /recommended regression tests/i,
@@ -32,7 +30,7 @@ describe('core domain routes', () => {
     ).toBeInTheDocument()
     expect(screen.getAllByText(/cmd-v2 .* characters\.c1\.current_goal/i).length).toBeGreaterThan(0)
 
-    await user.click(screen.getByRole('link', { name: /metrics & gate/i }))
+    await user.click(screen.getByRole('link', { name: /gate/i }))
     expect(
       await screen.findByRole('heading', { name: /gate status/i }),
     ).toBeInTheDocument()
@@ -46,10 +44,10 @@ describe('core domain routes', () => {
     )
     expect(await screen.findByText(/review-post-state/i)).toBeInTheDocument()
 
-    await user.click(screen.getByRole('link', { name: /incidents/i }))
+    await user.click(screen.getByRole('link', { name: /事件/i }))
     expect(await screen.findByText(/inc-post-state/i)).toBeInTheDocument()
 
-    await user.click(screen.getByRole('link', { name: /releases/i }))
+    await user.click(screen.getByRole('link', { name: /发布/i }))
     expect(await screen.findByText(/rel-post-state/i)).toBeInTheDocument()
   })
 })

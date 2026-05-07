@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -13,27 +13,27 @@ describe('failure class coverage', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('link', { name: /replay lab/i }))
+    await user.click(screen.getByRole('link', { name: /回放实验室/i }))
     expect((await screen.findAllByText(/visibility_leak/i)).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/belief_conflict/i).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/capability_violation/i).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/inactive_rule_use/i).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/plot_obligation_missed/i).length).toBeGreaterThan(0)
 
-    await user.click(screen.getByRole('link', { name: /validation/i }))
+    await user.click(screen.getByRole('link', { name: /校验中心/i }))
     const failureClassSelect = await screen.findByRole('combobox', {
       name: /failure class/i,
     })
     expect(failureClassSelect).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'post_state_mismatch' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'visibility_leak' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'belief_conflict' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'capability_violation' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'inactive_rule_use' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'plot_obligation_missed' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'policy_drift' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'state_drift' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'contract_mismatch' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'mechanism_missing' })).toBeInTheDocument()
+    expect(within(failureClassSelect).getByRole('option', { name: 'post_state_mismatch' })).toBeInTheDocument()
+    expect(within(failureClassSelect).getByRole('option', { name: 'visibility_leak' })).toBeInTheDocument()
+    expect(within(failureClassSelect).getByRole('option', { name: 'belief_conflict' })).toBeInTheDocument()
+    expect(within(failureClassSelect).getByRole('option', { name: 'capability_violation' })).toBeInTheDocument()
+    expect(within(failureClassSelect).getByRole('option', { name: 'inactive_rule_use' })).toBeInTheDocument()
+    expect(within(failureClassSelect).getByRole('option', { name: 'plot_obligation_missed' })).toBeInTheDocument()
+    expect(within(failureClassSelect).getByRole('option', { name: 'policy_drift' })).toBeInTheDocument()
+    expect(within(failureClassSelect).getByRole('option', { name: 'state_drift' })).toBeInTheDocument()
+    expect(within(failureClassSelect).getByRole('option', { name: 'contract_mismatch' })).toBeInTheDocument()
+    expect(within(failureClassSelect).getByRole('option', { name: 'mechanism_missing' })).toBeInTheDocument()
   })
 })

@@ -11,7 +11,13 @@ import type { SreDataProvider } from '../data/provider'
 import { getRuntimeProvider } from '../data/providers/provider-registry'
 import { useUiStore } from './store'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+})
 const SreProviderContext = createContext<SreDataProvider | null>(null)
 
 export function AppProviders({ children }: PropsWithChildren) {

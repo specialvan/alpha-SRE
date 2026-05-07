@@ -14,11 +14,12 @@ import { describeDataError } from '../../data/errors'
 
 export function ReleaseDetailPage() {
   const provider = useSreProvider()
+  const dataMode = useUiStore((state) => state.dataMode)
   const role = useUiStore((state) => state.role)
   const params = useParams()
   const ref = decodeURIComponent(params.releaseRef ?? '')
   const release = useQuery({
-    queryKey: ['release', ref],
+    queryKey: [dataMode, 'release', ref],
     queryFn: () => provider.getReleaseAttempt(ref),
     enabled: Boolean(ref),
   })

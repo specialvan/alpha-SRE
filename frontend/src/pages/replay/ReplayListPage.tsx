@@ -10,9 +10,10 @@ import { PaginationControls } from '../../components/PaginationControls'
 import { StateBadge } from '../../components/StateBadge'
 import { StatusNotice } from '../../components/StatusNotice'
 import { useSreProvider } from '../../app/providers'
+import { useUiStore } from '../../app/store'
 import { describeDataError } from '../../data/errors'
 import { enabledCapabilityLabels } from '../../data/list-capabilities'
-import type { SortDirection } from '../../data/types'
+import type { DataMode, SortDirection } from '../../data/types'
 
 const replayFailureOptions = [
   'post_state_mismatch',
@@ -29,6 +30,7 @@ const replayFailureOptions = [
 
 export function ReplayListPage() {
   const provider = useSreProvider()
+  const dataMode = useUiStore((state) => state.dataMode)
   const [search, setSearch] = useState('')
   const [failureClass, setFailureClass] = useState('')
   const [sortBy, setSortBy] = useState('updatedAt')
@@ -37,8 +39,7 @@ export function ReplayListPage() {
   const [page, setPage] = useState(1)
 
   const replays = useQuery({
-    queryKey: ['replays', search, failureClass, sortBy, sortDirection, pageSize, page],
-    placeholderData: (previous) => previous,
+    queryKey: [dataMode, 'replays', search, failureClass, sortBy, sortDirection, pageSize, page],
     queryFn: () =>
       provider.listReplayBundles({
         search,
@@ -49,25 +50,25 @@ export function ReplayListPage() {
         pageSize,
       }),
   })
-  const lastDataRef = useRef<typeof replays.data>(undefined)
+  const lastDataRef = useRef<Partial<Record<DataMode, typeof replays.data>>>({})
   const errorState = replays.isError
-    ? describeDataError(replays.error, 'Replay bundles unavailable.')
+    ? describeDataError(replays.error, '回放包列表不可用。')
     : null
 
   if (replays.data) {
-    lastDataRef.current = replays.data
+    lastDataRef.current[dataMode] = replays.data
   }
 
-  const data = replays.data ?? lastDataRef.current
+  const data = replays.data ?? lastDataRef.current[dataMode]
 
   if (replays.isLoading && !data) {
-    return <LoadingSkeleton label="Loading replay bundles..." />
+    return <LoadingSkeleton label="正在加载回放包..." />
   }
 
   if (replays.isError && !data) {
     return (
       <EmptyState
-        title={errorState?.title ?? 'Replay bundles unavailable.'}
+        title={errorState?.title ?? '回放包列表不可用。'}
         description={errorState?.description}
       />
     )
@@ -76,8 +77,8 @@ export function ReplayListPage() {
   if (!data) {
     return (
       <EmptyState
-        title="Replay bundles unavailable."
-        description="No replay list payload was returned."
+        title="回放包列表不可用。"
+        description="未返回回放列表数据。"
       />
     )
   }
@@ -86,14 +87,14 @@ export function ReplayListPage() {
     <section className="page-shell">
       <header className="page-header">
         <div>
-          <p className="eyebrow">Replay Lab</p>
-          <h2>Replay Lab</h2>
-          <p>Locked replay sessions with explicit failure classes, observation frames, and evidence trails.</p>
+          <p className="eyebrow">回放实验室</p>
+          <h2>回放实验室</h2>
+          <p>查看带锁定上下文的回放会话、失败分类、观测帧和证据链。</p>
         </div>
       </header>
       {replays.isError ? (
         <StatusNotice
-          title="Showing cached replay bundles."
+          title="正在显示缓存的回放包。"
           description={errorState?.description}
           tone="warning"
         />
@@ -110,9 +111,9 @@ export function ReplayListPage() {
           setPage(1)
         }}
         sortOptions={[
-          { value: 'updatedAt', label: 'Updated at' },
-          { value: 'title', label: 'Title' },
-          { value: 'commandId', label: 'Command id' },
+          { value: 'updatedAt', label: '更新时间' },
+          { value: 'title', label: '标题' },
+          { value: 'commandId', label: '命令 ID' },
         ]}
         sortDirection={sortDirection}
         onSortDirectionChange={(value) => {
@@ -128,16 +129,16 @@ export function ReplayListPage() {
         capabilities={enabledCapabilityLabels(data.capabilities)}
       >
         <label className="toolbar__field">
-          <span>Failure class</span>
+          <span>失败分类</span>
           <select
-            aria-label="Replay failure class"
+            aria-label="回放失败分类"
             value={failureClass}
             onChange={(event) => {
               setFailureClass(event.target.value)
               setPage(1)
             }}
           >
-            <option value="">all</option>
+            <option value="">全部</option>
             {replayFailureOptions.map((option) => (
               <option key={option} value={option}>
                 {option}
@@ -148,8 +149,8 @@ export function ReplayListPage() {
       </FilterBar>
       {data.items.length === 0 ? (
         <EmptyState
-          title="No replay bundles match the current query."
-          description="Change the search text, failure class, or page size."
+          title="当前查询没有匹配的回放包。"
+          description="请调整搜索词、失败分类或每页数量。"
         />
       ) : (
         <>
@@ -175,10 +176,10 @@ export function ReplayListPage() {
                 <div className="link-row">
                   {replay.links.snapshotRef ? (
                     <Link className="card-link" to={`/snapshots/${replay.links.snapshotRef}`}>
-                      Pre-state Snapshot
+                      前置快照
                     </Link>
                   ) : null}
-                  <span className="muted">{replay.issueCodes.length} issue codes</span>
+                  <span className="muted">{replay.issueCodes.length} 个问题码</span>
                 </div>
               </li>
             ))}

@@ -10,14 +10,16 @@ import { SectionAccordion } from '../../components/SectionAccordion'
 import { StateBadge } from '../../components/StateBadge'
 import { StatusNotice } from '../../components/StatusNotice'
 import { useSreProvider } from '../../app/providers'
+import { useUiStore } from '../../app/store'
 import { describeDataError } from '../../data/errors'
 
 export function ArtifactDetailPage() {
   const provider = useSreProvider()
+  const dataMode = useUiStore((state) => state.dataMode)
   const params = useParams()
   const ref = decodeURIComponent(params.artifactRef ?? '')
   const artifact = useQuery({
-    queryKey: ['artifact', ref],
+    queryKey: [dataMode, 'artifact', ref],
     queryFn: () => provider.getArtifact(ref),
     enabled: Boolean(ref),
   })
@@ -28,27 +30,27 @@ export function ArtifactDetailPage() {
     {
       queries: [
         {
-          queryKey: ['artifact-section', 'snapshot', artifact.data?.links.snapshotRef],
+          queryKey: [dataMode, 'artifact-section', 'snapshot', artifact.data?.links.snapshotRef],
           queryFn: () => provider.getSnapshot(artifact.data!.links.snapshotRef!),
           enabled: Boolean(artifact.data?.links.snapshotRef),
         },
         {
-          queryKey: ['artifact-section', 'replay', artifact.data?.links.replayRef],
+          queryKey: [dataMode, 'artifact-section', 'replay', artifact.data?.links.replayRef],
           queryFn: () => provider.getReplayBundle(artifact.data!.links.replayRef!),
           enabled: Boolean(artifact.data?.links.replayRef),
         },
         {
-          queryKey: ['artifact-section', 'validation', artifact.data?.links.replayRef],
+          queryKey: [dataMode, 'artifact-section', 'validation', artifact.data?.links.replayRef],
           queryFn: () => provider.getValidationForReplay(artifact.data!.links.replayRef!),
           enabled: Boolean(artifact.data?.links.replayRef),
         },
         {
-          queryKey: ['artifact-section', 'metrics', artifact.data?.ref],
+          queryKey: [dataMode, 'artifact-section', 'metrics', artifact.data?.ref],
           queryFn: () => provider.getMetrics({ timeRange: '7d' }),
           enabled: Boolean(artifact.data?.sections.some((section) => section.key === 'metrics')),
         },
         {
-          queryKey: ['artifact-section', 'gate', artifact.data?.links.gateRef],
+          queryKey: [dataMode, 'artifact-section', 'gate', artifact.data?.links.gateRef],
           queryFn: () => provider.getGateResult(artifact.data!.links.gateRef!),
           enabled: Boolean(artifact.data?.links.gateRef),
         },
@@ -228,6 +230,10 @@ export function ArtifactDetailPage() {
 
       return (
         <>
+          <p className="card-summary">
+            This preview comes from global aggregate metrics. Replay-local metrics remain
+            available in the artifact JSON.
+          </p>
           <ul className="stat-list">
             {Object.entries(metricsSection.data.summary)
               .slice(0, 6)
@@ -239,7 +245,7 @@ export function ArtifactDetailPage() {
           </ul>
           <div className="link-row">
             <Link className="card-link" to="/metrics">
-              Open Metrics & Gate
+              Open Global Metrics & Gate
             </Link>
           </div>
         </>
