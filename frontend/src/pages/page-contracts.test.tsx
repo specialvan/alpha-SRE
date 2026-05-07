@@ -133,7 +133,7 @@ describe('page contracts', () => {
 
     renderRoute(path, routePath, element)
 
-    expect(await screen.findByRole('heading', { name: /resource not found/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /资源未找到/i })).toBeInTheDocument()
     expect(screen.getByText(new RegExp(errorMessage, 'i'))).toBeInTheDocument()
   })
 
@@ -154,10 +154,10 @@ describe('page contracts', () => {
 
     expect(await screen.findByRole('link', { name: /locked post-state mismatch/i })).toBeInTheDocument()
 
-    await user.type(screen.getByLabelText(/^search$/i), 'x')
+    await user.type(screen.getByLabelText(/^搜索$/i), 'x')
 
     expect(
-      await screen.findByRole('heading', { name: /showing cached artifacts/i }),
+      await screen.findByRole('heading', { name: /正在显示缓存的制品列表/i }),
     ).toBeInTheDocument()
     expect(screen.getByText(/artifact index timeout/i)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /locked post-state mismatch/i })).toBeInTheDocument()
@@ -172,10 +172,13 @@ describe('page contracts', () => {
 
     currentProvider = {
       ...seededProvider,
-      listReplayBundles: vi.fn().mockResolvedValue({
+      listReplayBundles: vi.fn(async ({ page = 1, pageSize = 50 }) => ({
         ...replayList,
-        items: replayList.items.slice(0, 2),
-      }),
+        items: page === 1 ? replayList.items.slice(0, 2) : [],
+        total: 2,
+        page,
+        pageSize,
+      })),
       getValidationForReplay: vi.fn((ref: string) => {
         if (ref === 'bundle:post-state-mismatch') {
           return Promise.resolve({
@@ -205,16 +208,100 @@ describe('page contracts', () => {
 
     renderPage(<ValidationPage />)
 
-    expect(await screen.findByText(/^1 results$/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /copy finding id/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /copy finding summary/i })).toBeInTheDocument()
+    expect(await screen.findByText(/^2 条结果$/i)).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /复制finding id/i })).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: /复制finding summary/i })).toHaveLength(2)
 
     await user.selectOptions(screen.getByLabelText(/time range/i), 'all')
 
-    expect(await screen.findByText(/^2 results$/i)).toBeInTheDocument()
+    expect(await screen.findByText(/^4 条结果$/i)).toBeInTheDocument()
 
     await user.selectOptions(screen.getByLabelText(/time range/i), '24h')
 
-    expect(await screen.findByText(/^1 results$/i)).toBeInTheDocument()
+    expect(await screen.findByText(/^2 条结果$/i)).toBeInTheDocument()
+  })
+
+  it('does not truncate validation findings when replay count exceeds the first page', async () => {
+    const seededProvider = createSeededProvider()
+    const firstReplay = await seededProvider.getReplayBundle('bundle:post-state-mismatch')
+    const baseValidation = await seededProvider.getValidationForReplay(
+      'bundle:post-state-mismatch',
+    )
+    const replayRefs = Array.from({ length: 51 }, (_, index) => `bundle:validation-${index + 1}`)
+    const replayItems = replayRefs.map((ref, index) => ({
+      ...firstReplay,
+      ref,
+      artifactRef: ref,
+      title: `Replay bundle ${index + 1}`,
+      commandId: `cmd-validation-${index + 1}`,
+      links: {
+        ...firstReplay.links,
+        artifactRef: ref,
+        replayRef: ref,
+        validationRef: `validation:${ref}`,
+      },
+    }))
+    const listReplayBundlesMock = vi.fn(async ({ page = 1, pageSize = 20 }) => {
+      const start = (page - 1) * pageSize
+      const items = replayItems.slice(start, start + pageSize)
+
+      return {
+        items,
+        total: replayItems.length,
+        page,
+        pageSize,
+        capabilities: {
+          timeRange: true,
+          status: true,
+          replayOperatorId: true,
+        },
+      }
+    })
+    const getValidationForReplayMock = vi.fn(async (ref: string) => ({
+      ...baseValidation,
+      replayRef: ref,
+      findings: [
+        {
+          ...baseValidation.findings[0],
+          id: `finding:${ref}`,
+          replayRef: ref,
+          subjectId: ref,
+          links: {
+            ...baseValidation.findings[0].links,
+            replayRef: ref,
+          },
+        },
+      ],
+      links: {
+        ...baseValidation.links,
+        replayRef: ref,
+      },
+      regressionTests: [`replay_regression::${ref}`],
+    }))
+
+    currentProvider = {
+      ...seededProvider,
+      listReplayBundles: listReplayBundlesMock,
+      getValidationForReplay: getValidationForReplayMock,
+    } as SreDataProvider
+
+    renderPage(<ValidationPage />)
+
+    expect(await screen.findByText(/^51 条结果$/i)).toBeInTheDocument()
+    expect(listReplayBundlesMock).toHaveBeenCalledTimes(2)
+    expect(getValidationForReplayMock).toHaveBeenCalledTimes(51)
+  })
+
+  it('labels artifact metrics preview as a global aggregate surface', async () => {
+    renderRoute(
+      '/artifacts/bundle:post-state-mismatch',
+      '/artifacts/:artifactRef',
+      <ArtifactDetailPage />,
+    )
+
+    expect(await screen.findByText(/global aggregate metrics/i)).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: /open global metrics & gate/i }),
+    ).toBeInTheDocument()
   })
 })

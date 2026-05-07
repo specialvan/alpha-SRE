@@ -11,6 +11,7 @@ import { StateBadge } from '../../components/StateBadge'
 import { StatusNotice } from '../../components/StatusNotice'
 import { VirtualizedList } from '../../components/VirtualizedList'
 import { useSreProvider } from '../../app/providers'
+import { useUiStore } from '../../app/store'
 import { describeDataError } from '../../data/errors'
 
 function getTimeRangeWindow(range: string) {
@@ -28,6 +29,7 @@ function getTimeRangeWindow(range: string) {
 
 export function ValidationPage() {
   const provider = useSreProvider()
+  const dataMode = useUiStore((state) => state.dataMode)
   const [searchParams] = useSearchParams()
   const replayRefFilter = searchParams.get('replayRef') ?? ''
   const [search, setSearch] = useState('')
@@ -39,11 +41,22 @@ export function ValidationPage() {
     searchParams.get('replayOperatorId') ?? '',
   )
   const validations = useQuery({
-    queryKey: ['validation', 'all'],
+    queryKey: [dataMode, 'validation', 'all'],
     queryFn: async () => {
-      const replays = await provider.listReplayBundles({ page: 1, pageSize: 50 })
+      const allReplays = []
+      const pageSize = 50
+      let page = 1
+      let total = 0
+
+      do {
+        const replays = await provider.listReplayBundles({ page, pageSize })
+        allReplays.push(...replays.items)
+        total = replays.total
+        page += 1
+      } while (allReplays.length < total)
+
       return Promise.all(
-        replays.items.map((replay) => provider.getValidationForReplay(replay.ref)),
+        allReplays.map((replay) => provider.getValidationForReplay(replay.ref)),
       )
     },
   })
